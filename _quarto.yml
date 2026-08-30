@@ -1,0 +1,21 @@
+project:
+  type: book
+
+book:
+  title: "ds6400-portfolio"
+  author: "Christina Kosti"
+  date: "8/27/2026"
+  chapters:
+    - index.qmd
+    - 01-performance-measures.qmd
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      - cosmo
+  pdf:
+    documentclass: scrreprt
+
+editor: visual
+

@@ -1,0 +1,5 @@
+# Preface {.unnumbered}
+
+This book contains my notes, paper summaries, and computational explorations for DS 6400: Advanced Machine Learning I.
+
+The goal is to document key concepts from the course and develop reproducible examples and simulations in R.
