@@ -8,7 +8,6 @@ book:
   chapters:
     - index.qmd
     - 01-performance-measures.qmd
-bibliography: references.bib
 
 format:
   html:
