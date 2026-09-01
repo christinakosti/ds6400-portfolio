@@ -89,12 +89,22 @@ However, after tuning the classifiers, the average CV error estimates were lower
 
 This shows that using the minimum CV error after parameter tuning made the classifiers appear more accurate than they really were on independent data.
 
+Figure 1 shows this bias for the optimized Shrunken Centroids classifier.
+
+![](images/A-Fig1.png){fig-alt="Figure 1 from Varma and Simon (2006)"}
+
+*Source: Varma & Simon (2006), Figure 1.*
+
 Nested cross-validation produced error estimates that were much closer to the true error.
 
 For the Shrunken Centroids classifier on null data:
 
--   Nested CV error = 54.2%
--   True error = 50.0%
+- Nested CV error = 54.2%
+- True error = 50.0%
+
+![](images/A-Fig3.png){fig-alt="Figure 3 from Varma and Simon (2006)"}
+
+*Source: Varma & Simon (2006), Figure 3.*
 
 For the SVM classifier on non-null data:
 

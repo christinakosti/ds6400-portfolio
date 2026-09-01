@@ -276,12 +276,17 @@ window.Quarto = {
 <li>True error for both classifiers = 50.0%</li>
 </ul>
 <p>This shows that using the minimum CV error after parameter tuning made the classifiers appear more accurate than they really were on independent data.</p>
+<p>Figure 1 shows this bias for the optimized Shrunken Centroids classifier.</p>
+<p><img src="images/A-Fig1.png" class="img-fluid" alt="Figure 1 from Varma and Simon (2006)"></p>
+<p><em>Source: Varma &amp; Simon (2006), Figure 1.</em></p>
 <p>Nested cross-validation produced error estimates that were much closer to the true error.</p>
 <p>For the Shrunken Centroids classifier on null data:</p>
 <ul>
 <li>Nested CV error = 54.2%</li>
 <li>True error = 50.0%</li>
 </ul>
+<p><img src="images/A-Fig3.png" class="img-fluid" alt="Figure 3 from Varma and Simon (2006)"></p>
+<p><em>Source: Varma &amp; Simon (2006), Figure 3.</em></p>
 <p>For the SVM classifier on non-null data:</p>
 <ul>
 <li>Nested CV error = 35.3%</li>
