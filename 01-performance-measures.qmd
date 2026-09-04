@@ -152,7 +152,9 @@ Because the simulated data will contain no true class difference, the independen
 
 ### Computational exploration
 
-#### 1. Simulating the data
+#### Phase 1: Simulating the data
+
+I first simulate a binary classification problem with 40 observations that are equally divided between classes A and B. The two predictors are generated from the same distribution for both classes, so they contain no true information about class membership. This creates a null setting in which the expected classification error is approximately 50%.
 
 ```{r}
 class <- factor(rep(c("A", "B"), each = 20)) # Creates 40 class labels: 20 A and 20 B
@@ -160,12 +162,40 @@ class <- factor(rep(c("A", "B"), each = 20)) # Creates 40 class labels: 20 A and
 table(class)
 ```
 
+The class counts confirm that the simulated dataset is balanced, with 20 observations in class A and 20 in class B.
+
+Next, I generate two continuous predictors, `x1` and `x2`, from a standard normal distribution with mean 0 and standard deviation 1. Because both classes use the same distribution, the predictors contain no true class information and any apparent separation is due to chance.
+
+Mathematically, for each predictor $j=1,2$,
+
+$$
+X_{ij} \mid Y_i=A \sim N(0,1)
+\qquad \text{and} \qquad
+X_{ij} \mid Y_i=B \sim N(0,1).
+$$
+
 ```{r}
 set.seed(123) # Keeps data reproducible
 
 x1 <- rnorm(40, mean = 0, sd = 1) # Generates one x1 value per observation from N(0,1)
 x2 <- rnorm(40, mean = 0, sd = 1) # Generates one x2 value per observation from N(0,1)
 ```
+
+Each observation can now be represented by its predictor vector $\mathbf{X}_i$ and class label $Y_i$, where
+
+$$
+\mathbf{X}_i = (X_{i1}, X_{i2}) \in \mathbb{R}^2,
+\qquad
+Y_i \in \{A,B\}.
+$$
+
+Here, $\mathbf{X}_i$ contains the two predictor values for observation $i$, while $Y_i$ indicates whether that observation belongs to class A or B. The full simulated dataset, denoted by $\mathcal{D}$, can therefore be written as
+
+$$
+\mathcal{D} = \{(\mathbf{X}_i, Y_i)\}_{i=1}^{40}.
+$$
+
+I combine these values into a data frame so that each row represents one simulated observation.
 
 ```{r}
 sim_data <- data.frame(
@@ -175,22 +205,64 @@ sim_data <- data.frame(
 ) # Creates the simulated data frame
 ```
 
+At this point, each of the 40 observations has a class label and two predictor values, but the predictors were generated independently of class.
+
+To visualize the null setting, I plot `x1` against `x2` and distinguish the two classes by color.
+
 ```{r}
 plot(
   sim_data$x1,
   sim_data$x2,
-  col = sim_data$class,
+  col = c("steelblue", "tomato")[sim_data$class],
   pch = 19,
-  xlab = "x1",
-  ylab = "x2"
-) # Plots x1 against x2, with points colored by class
+  cex = 1.2,
+  xlab = "Predictor x1",
+  ylab = "Predictor x2",
+  main = "Null Simulation: No True Class Separation"
+)
+
+legend(
+  "topright",
+  legend = c("Class A", "Class B"),
+  col = c("steelblue", "tomato"),
+  pch = 19,
+  bty = "n"
+)
 ```
 
-#### 2. k-nearest neighbors classification
+The two classes overlap substantially, with no clear separation between A and B. This is consistent with the way the data were simulated: the predictors contain no true class signal.
+
+#### Phase 2: k-nearest neighbors classification
+
+I next use k-nearest neighbors (kNN) to classify the observations. kNN predicts the class of a new observation by finding the $k$ observations in the training data that are closest to it and assigning the class that is most common among those neighbors.
+
+Because there are two predictors, the distance between two observations can be calculated using Euclidean distance:
+
+$$
+d(\mathbf{X}_i,\mathbf{X}_j)
+=
+\sqrt{(X_{i1}-X_{j1})^2 + (X_{i2}-X_{j2})^2}.
+$$
+
+Smaller values of $k$ make the classifier depend on fewer nearby observations, while larger values use more neighbors. I compare five possible values of $k$:
+
+$$
+\mathcal{K} = \{1,3,5,7,9\}.
+$$
 
 ```{r}
 library(class) # Loads the package containing the knn() function
 
+k_values <- c(1, 3, 5, 7, 9) # Candidate values of k
+
+x <- sim_data[, c("x1", "x2")] # Keeps only the predictors used by kNN
+```
+
+#### Phase 3: Choosing k with cross-validation
+
+To compare the candidate values of $k$, I use 10-fold cross-validation. The 40 observations are divided into 10 folds, with each fold containing two observations from class A and two from class B.
+
+```{r}
 set.seed(456) # Makes the random fold assignment reproducible
 
 fold_id <- integer(40) # Creates a vector with one position for each observation
@@ -200,39 +272,64 @@ fold_id[class == "B"] <- sample(rep(1:10, each = 2))
 # Randomly assigns each class across 10 folds, with 2 A and 2 B per fold
 ```
 
-```{r}
-k_values <- c(1, 3, 5, 7, 9) # Candidate values of k to compare using CV
+Each observation is now assigned to one of the 10 folds. During cross-validation, one fold is held out for testing while the remaining nine folds are used for training. This process is repeated until every fold has served as the test fold.
 
-x <- sim_data[, c("x1", "x2")] # Keeps only the predictors used by kNN
-```
+To compare the candidate values of $k$, I need to store the cross-validation error calculated for each one.
 
 ```{r}
 cv_error <- numeric(length(k_values)) # Creates space to store one CV error for each value of k
 ```
 
+For each candidate value of $k$, I estimate its classification error using the 10 folds. Within each fold, the model is trained on 36 observations and tested on the 4 observations that were held out.
+
+For a given fold, the classification error is the proportion of held-out observations that are classified incorrectly:
+
+$$
+\widehat{\mathrm{Err}}_{f}(k)
+=
+\frac{1}{n_f}
+\sum_{i \in f} I(\widehat{Y}_i \neq Y_i),
+$$
+
+where $n_f$ is the number of observations in fold $f$, and $I(\widehat{Y}_i \neq Y_i)$ equals 1 when an observation is classified incorrectly and 0 when it is classified correctly.
+
+The 10-fold cross-validation error for a given value of $k$ is then the average error across the 10 folds:
+
+$$
+\widehat{\mathrm{Err}}_{\mathrm{CV}}(k)
+=
+\frac{1}{10}
+\sum_{f=1}^{10}
+\widehat{\mathrm{Err}}_{f}(k).
+$$
+
 ```{r}
-for (j in seq_along(k_values)) { # Repeats the process once for each candidate value of k
+for (j in seq_along(k_values)) { # Repeats once for each candidate value of k
   
-  fold_error <- numeric(10) # Creates space to store the error from each of the 10 folds
+  fold_error <- numeric(10) # Stores one error for each of the 10 folds
   
-  for (fold in 1:10) { # Repeats the CV process for folds 1 through 10
+  for (fold in 1:10) { # Repeats the process for each fold
     
-    train_idx <- fold_id != fold # TRUE for observations not in the current test fold
-    test_idx  <- fold_id == fold # TRUE for observations in the current test fold
+    train_idx <- fold_id != fold # Observations used for training
+    test_idx  <- fold_id == fold # Observations held out for testing
     
     pred <- knn(
-      train = x[train_idx, ],      # Predictor values for the 36 training observations
-      test = x[test_idx, ],        # Predictor values for the 4 held-out observations
-      cl = class[train_idx],       # Known class labels for the training observations
-      k = k_values[j]              # Current value of k being evaluated
+      train = x[train_idx, ],
+      test = x[test_idx, ],
+      cl = class[train_idx],
+      k = k_values[j]
     )
     
-    fold_error[fold] <- mean(pred != class[test_idx]) # Proportion of test predictions that are wrong
+    fold_error[fold] <- mean(pred != class[test_idx]) # Error in the held-out fold
   }
   
-  cv_error[j] <- mean(fold_error) # Average error across all 10 folds for this value of k
+  cv_error[j] <- mean(fold_error) # Average error across all 10 folds
 }
 ```
+
+For each candidate value of $k$, the model is evaluated across all 10 folds. The errors from the 10 folds are then averaged to produce one cross-validation error for that value of $k$. This process is repeated for each candidate value of $k$.
+
+I combine the candidate values of $k$ and their corresponding cross-validation errors into a table so that their performance can be compared directly.
 
 ```{r}
 cv_results <- data.frame(
@@ -242,6 +339,19 @@ cv_results <- data.frame(
 
 cv_results # Shows the CV error for each k
 ```
+
+Among the five candidate values, k = `r k_values[which.min(cv_error)]` has the lowest cross-validation error at `r round(min(cv_error), 3)`, meaning that `r round(100 * min(cv_error), 1)`% of the held-out observations were misclassified on average.
+
+I select the value of $k$ with the smallest cross-validation error. This can be written as
+
+$$
+k^*
+=
+\underset{k \in \mathcal{K}}{\arg\min}
+\ \widehat{\mathrm{Err}}_{\mathrm{CV}}(k).
+$$
+
+Here, $k^*$ represents the value of $k$ that appears to perform best according to cross-validation.
 
 ```{r}
 best_index <- which.min(cv_error) # Finds the position of the smallest CV error
@@ -255,248 +365,279 @@ min_cv_error <- min(cv_error) # Stores the lowest 10-fold CV error across all ca
 min_cv_error
 ```
 
-#### 3. Nested cross-validation
+For this particular simulated dataset, cross-validation selects k = `r best_k`, with a minimum estimated error of `r round(100 * min_cv_error, 1)`%.
+
+#### Phase 4: Nested cross-validation
+
+The minimum cross-validation error calculated above is based on the same cross-validation procedure that was used to choose $k$. Because the best-performing value is selected from several candidates, this minimum error may make the classifier appear better than it really is.
+
+To separate model selection from model evaluation, I next use nested cross-validation. The procedure has two levels:
+
+1. The **inner cross-validation** chooses the best value of $k$.
+2. The **outer cross-validation** evaluates the classifier using an observation that was not involved in choosing $k$.
+
+In this simulation, the outer procedure uses leave-one-out cross-validation (LOOCV). One of the 40 observations is held out, leaving 39 observations for model selection. Ten-fold cross-validation is then performed using only those 39 observations to choose $k$. The selected value of $k$ is used to predict the single untouched outer observation.
+
+This process is repeated until every observation has been held out once.
+
+**Illustration:** How nested cross-validation works
+
+The diagram below shows how the inner and outer stages work together.
+
+```{mermaid}
+flowchart TD
+    A["Start with 40 observations"] --> B["Outer loop: hold out 1 observation"]
+    B --> C["Use the remaining 39 observations as training data"]
+    C --> D["Inner loop: perform 10-fold cross-validation on the 39 observations"]
+    D --> E["Compare candidate values of k"]
+    E --> F["Choose the best k"]
+    F --> G["Train kNN on all 39 observations using the chosen k"]
+    G --> H["Predict the 1 held-out observation"]
+    H --> I["Record whether the prediction was correct or incorrect"]
+    I --> J["Repeat until every observation has been held out once"]
+    J --> K["Average the 40 outer prediction errors"]
+```
+
+Because the same 10-fold cross-validation procedure is used whenever I need to compare candidate values of $k$, I place this repeated computation inside a reusable function. The function takes a training dataset, evaluates all candidate values of $k$, and returns both the selected $k$ and its minimum cross-validation error.
 
 ```{r}
-set.seed(789) # Makes the inner CV fold assignments reproducible
-
-nested_error <- numeric(40) # Stores whether each outer prediction is wrong
-
-for (i in 1:40) { # Holds out each observation once in the outer LOOCV
+select_k_cv <- function(x_train, y_train, k_values) { # Uses 10-fold CV to compare candidate values of k
   
-  outer_train_idx <- (1:40) != i # The other 39 observations
-  outer_test_idx  <- (1:40) == i # The one held-out observation
+  fold_id <- integer(length(y_train)) # Creates one fold label per training observation
   
-  x_outer <- x[outer_train_idx, , drop = FALSE] # Predictors for the 39 training observations
-  class_outer <- class[outer_train_idx] # Class labels for the 39 training observations
-  
-  inner_fold_id <- integer(39) # Creates fold assignments for the inner 10-fold CV
-  
-  inner_fold_id[class_outer == "A"] <- sample(
-    rep(1:10, length.out = sum(class_outer == "A"))
+  fold_id[y_train == "A"] <- sample(
+    rep(1:10, length.out = sum(y_train == "A"))
   )
   
-  inner_fold_id[class_outer == "B"] <- sample(
-    rep(1:10, length.out = sum(class_outer == "B"))
+  fold_id[y_train == "B"] <- sample(
+    rep(1:10, length.out = sum(y_train == "B"))
   )
- # Spreads A and B observations approximately evenly across the 10 inner folds
+  # Distributes observations from each class approximately evenly across the 10 folds
   
-  inner_cv_error <- numeric(length(k_values)) # Stores inner CV error for each k
+  cv_error <- numeric(length(k_values)) # Stores one CV error for each candidate k
   
   for (j in seq_along(k_values)) { # Tries each candidate value of k
-        
-       inner_error <- numeric(39) # Stores the error for each of the 39 inner-CV observations
     
-    for (fold in 1:10) {
-      
-      inner_train_idx <- inner_fold_id != fold
-      inner_test_idx  <- inner_fold_id == fold
-      
-      pred_inner <- knn(
-        train = x_outer[inner_train_idx, , drop = FALSE],
-        test = x_outer[inner_test_idx, , drop = FALSE],
-        cl = class_outer[inner_train_idx],
-        k = k_values[j]
-      )
-      
-      inner_error[inner_test_idx] <- as.numeric(
-        pred_inner != class_outer[inner_test_idx]
-      )
-    }
+    observation_error <- numeric(length(y_train)) # Stores prediction errors for this k
     
-    inner_cv_error[j] <- mean(inner_error) # Proportion wrong across all 39 inner-CV predictions
-  }
-  
-  best_inner_k <- k_values[which.min(inner_cv_error)] # Selects k using only the 39 training observations
-  
-  pred_outer <- knn(
-    train = x_outer,
-    test = x[outer_test_idx, , drop = FALSE],
-    cl = class_outer,
-    k = best_inner_k
-  )
-  
-  nested_error[i] <- pred_outer != class[outer_test_idx] # Records whether the untouched observation was misclassified
-}
-
-nested_cv_error <- mean(nested_error) # Average error across all 40 outer predictions
-
-nested_cv_error
-```
-  
-#### 4. Independent test-set error
-
-```{r}
-set.seed(999) # Makes the independent test data reproducible
-
-test_class <- factor(rep(c("A", "B"), each = 10000)) # Creates 20,000 test observations
-
-test_x <- data.frame(
-  x1 = rnorm(20000, mean = 0, sd = 1),
-  x2 = rnorm(20000, mean = 0, sd = 1)
-) # Generates new predictor values from the same null distribution
-
-test_pred <- knn(
-  train = x,          # Uses all 40 original observations as training data
-  test = test_x,      # Predicts the 20,000 completely new observations
-  cl = class,         # Known class labels for the 40 training observations
-  k = best_k          # Uses the k selected by ordinary 10-fold CV
-)
-
-test_error <- mean(test_pred != test_class) # Proportion of independent test observations classified incorrectly
-
-test_error
-```
-#### 5. Repeated simulation
-
-```{r}
-run_one_simulation <- function() { # Runs the complete analysis once on one new simulated dataset
-  
-  class <- factor(rep(c("A", "B"), each = 20)) # Creates 40 class labels: 20 A and 20 B
-  
-  x <- data.frame(
-    x1 = rnorm(40, mean = 0, sd = 1),
-    x2 = rnorm(40, mean = 0, sd = 1)
-  ) # Generates two predictors with no true difference between classes
-  
-  k_values <- c(1, 3, 5, 7, 9) # Candidate values of k to compare
-  
-  fold_id <- integer(40) # Creates a vector with one fold assignment for each observation
-  
-  fold_id[class == "A"] <- sample(rep(1:10, each = 2))
-  fold_id[class == "B"] <- sample(rep(1:10, each = 2))
-  # Spreads A and B observations evenly across the 10 folds
-  
-  cv_error <- numeric(length(k_values)) # Creates space to store one CV error for each k
-  
-  for (j in seq_along(k_values)) { # Tests each candidate value of k
-    
-    fold_error <- numeric(10) # Creates space for the error from each of the 10 folds
-    
-    for (fold in 1:10) { # Runs through each fold
+    for (fold in 1:10) { # Uses each fold once for testing
       
       train_idx <- fold_id != fold # Observations used for training
       test_idx <- fold_id == fold # Observations held out for testing
       
       pred <- knn(
-        train = x[train_idx, , drop = FALSE],
-        test = x[test_idx, , drop = FALSE],
-        cl = class[train_idx],
+        train = x_train[train_idx, , drop = FALSE],
+        test = x_train[test_idx, , drop = FALSE],
+        cl = y_train[train_idx],
         k = k_values[j]
-      ) # Uses the current k to predict the held-out fold
+      )
       
-      fold_error[fold] <- mean(pred != class[test_idx]) # Calculates the error for this fold
+      observation_error[test_idx] <- as.numeric(
+        pred != y_train[test_idx]
+      ) # Records 1 for an incorrect prediction and 0 for a correct prediction
     }
     
-    cv_error[j] <- mean(fold_error) # Calculates the average 10-fold CV error for this k
+    cv_error[j] <- mean(observation_error) # Calculates CV error for this k
   }
   
-  best_k <- k_values[which.min(cv_error)] # Selects the k with the lowest CV error
-  min_cv_error <- min(cv_error) # Stores the minimum ordinary CV error
+  list(
+    best_k = k_values[which.min(cv_error)], # k with the lowest CV error
+    min_cv_error = min(cv_error) # Corresponding minimum CV error
+  )
+}
+```
+
+The outer leave-one-out procedure is also repeated whenever nested cross-validation is performed. I therefore place this procedure inside a reusable function. For each held-out observation, the function uses `select_k_cv()` on the remaining observations to choose $k$, predicts the untouched observation, and finally averages the outer prediction errors.
+
+```{r}
+nested_cv_once <- function(x, y, k_values) { # Runs nested CV on one dataset
   
-  nested_error <- numeric(40) # Creates space for the 40 outer-test results
+  nested_error <- numeric(length(y)) # Stores one outer prediction error per observation
   
-  for (i in 1:40) { # Holds out each observation once in the outer LOOCV
+  for (i in seq_along(y)) { # Holds out each observation once
     
-    outer_train_idx <- (1:40) != i # Identifies the 39 outer-training observations
-    outer_test_idx <- (1:40) == i # Identifies the one outer-test observation
+    outer_train_idx <- seq_along(y) != i # The remaining 39 observations
+    outer_test_idx <- seq_along(y) == i # The one untouched observation
     
-    x_outer <- x[outer_train_idx, , drop = FALSE] # Keeps predictors for the 39 outer-training observations
-    class_outer <- class[outer_train_idx] # Keeps their class labels
+    x_outer <- x[outer_train_idx, , drop = FALSE]
+    y_outer <- y[outer_train_idx]
     
-    inner_fold_id <- integer(39) # Creates fold assignments for the 39 observations
+    inner_result <- select_k_cv(
+      x_train = x_outer,
+      y_train = y_outer,
+      k_values = k_values
+    ) # Chooses k using only the 39 outer-training observations
     
-    inner_fold_id[class_outer == "A"] <- sample(
-      rep(1:10, length.out = sum(class_outer == "A"))
-    )
-    
-    inner_fold_id[class_outer == "B"] <- sample(
-      rep(1:10, length.out = sum(class_outer == "B"))
-    )
-    # Spreads A and B observations approximately evenly across the 10 inner folds
-    
-    inner_cv_error <- numeric(length(k_values)) # Creates space for one inner CV error for each k
-    
-    for (j in seq_along(k_values)) { # Tests each candidate k inside the outer training set
-      
-      inner_error <- numeric(39) # Stores whether each of the 39 inner-CV predictions is wrong
-      
-      for (fold in 1:10) { # Runs through the 10 inner folds
-        
-        inner_train_idx <- inner_fold_id != fold # Observations used for inner training
-        inner_test_idx <- inner_fold_id == fold # Observations used for inner testing
-        
-        pred_inner <- knn(
-          train = x_outer[inner_train_idx, , drop = FALSE],
-          test = x_outer[inner_test_idx, , drop = FALSE],
-          cl = class_outer[inner_train_idx],
-          k = k_values[j]
-        ) # Predicts the current inner test fold using the current k
-        
-        inner_error[inner_test_idx] <- as.numeric(
-          pred_inner != class_outer[inner_test_idx]
-        ) # Records 0 for a correct prediction and 1 for a wrong prediction
-      }
-      
-      inner_cv_error[j] <- mean(inner_error) # Calculates the inner CV error for this k
-    }
-    
-    best_inner_k <- k_values[which.min(inner_cv_error)] # Chooses the best k using only the 39 observations
+    best_inner_k <- inner_result$best_k # Extracts the selected k
     
     pred_outer <- knn(
       train = x_outer,
       test = x[outer_test_idx, , drop = FALSE],
-      cl = class_outer,
+      cl = y_outer,
       k = best_inner_k
-    ) # Uses the selected k to predict the untouched outer observation
+    ) # Predicts the untouched outer observation
     
-    nested_error[i] <- as.numeric(
-      pred_outer != class[outer_test_idx]
-    ) # Records whether the outer prediction was correct or wrong
+    nested_error[i] <- pred_outer != y[outer_test_idx]
+    # Records whether the outer prediction was incorrect
   }
   
-  nested_cv_error <- mean(nested_error) # Calculates the error across all 40 outer predictions
+  mean(nested_error) # Returns the average error across all outer predictions
+}
+```
+
+I now apply the nested cross-validation procedure to the original 40-observation dataset.
+
+```{r}
+set.seed(789) # Makes the inner CV fold assignments reproducible
+
+nested_cv_error <- nested_cv_once(
+  x = x,
+  y = class,
+  k_values = k_values
+) # Runs nested CV on the original simulated dataset
+
+nested_cv_error
+```
+
+The nested cross-validation error for this particular simulated dataset is `r round(100 * nested_cv_error, 1)`%. Unlike the minimum ordinary cross-validation error, this estimate is based on outer observations that were not used to choose $k$, so model selection and model evaluation are kept separate.
+
+#### Phase 5: Evaluating on an independent test set
+
+Nested cross-validation provides an estimate of model performance using only the original 40 observations. However, because the data are simulated, I can also generate a large independent test set that was never used for training or model selection.
+
+In the null setting, the predictors contain no true class information, so the expected classification error on new observations is approximately 50%. I therefore use the independent test set as a benchmark for the error estimates obtained from cross-validation.
+
+I generate 20,000 new observations using the same data-generating process as before, with 10,000 observations from class A and 10,000 from class B.
+
+```{r}
+set.seed(999) # Makes the independent test set reproducible
+
+test_class <- factor(rep(c("A", "B"), each = 10000)) # Creates 20,000 balanced class labels
+
+test_x <- data.frame(
+  x1 = rnorm(20000, mean = 0, sd = 1),
+  x2 = rnorm(20000, mean = 0, sd = 1)
+) # Generates two predictors with no true class signal
+```
+
+The model is then trained on all 40 original observations using the value of $k$ selected by ordinary cross-validation. It is evaluated on the 20,000 new observations.
+
+```{r}
+test_pred <- knn(
+  train = x,
+  test = test_x,
+  cl = class,
+  k = best_k
+) # Predicts the classes of the independent test observations
+```
+
+The independent test-set error is the proportion of the 20,000 predictions that are incorrect:
+
+$$
+\widehat{\mathrm{Err}}_{\mathrm{test}}
+=
+\frac{1}{20000}
+\sum_{i=1}^{20000}
+I(\widehat{Y}_i^{\mathrm{test}} \neq Y_i^{\mathrm{test}}).
+$$
+
+```{r}
+test_error <- mean(test_pred != test_class) # Proportion of independent test observations classified incorrectly
+
+test_error
+```
+
+Because the independent test observations were not involved in either training or selecting $k$, this error provides a benchmark for how the selected classifier performs on new data.
+
+#### Phase 6: Repeating the simulation
+
+The results above are based on a single simulated dataset. Because a different random sample of 40 observations could produce different cross-validation errors, I repeat the entire simulation many times to examine the behavior of each error estimate across repeated samples.
+
+For each repetition, I generate a new dataset of 40 observations and repeat the same three evaluations:
+
+1. Select $k$ using ordinary 10-fold cross-validation and record the minimum CV error.
+2. Estimate error using nested cross-validation.
+3. Evaluate the selected model on a new independent test set of 20,000 observations.
+
+Because the cross-validation procedures were defined as reusable functions in Phase 4, I can apply them directly to each new simulated dataset.
+
+```{r}
+run_one_simulation <- function() { # Runs the entire experiment once
   
-  test_class <- factor(rep(c("A", "B"), each = 10000)) # Creates 20,000 independent test labels
+  y <- factor(rep(c("A", "B"), each = 20))
+  # Creates 40 balanced class labels: 20 A and 20 B
+  
+  x_sim <- data.frame(
+    x1 = rnorm(40, mean = 0, sd = 1),
+    x2 = rnorm(40, mean = 0, sd = 1)
+  ) # Generates a new null dataset
+  
+  ordinary <- select_k_cv(
+    x_train = x_sim,
+    y_train = y,
+    k_values = k_values
+  ) # Runs ordinary 10-fold CV on all 40 observations
+  
+  nested_error <- nested_cv_once(
+    x = x_sim,
+    y = y,
+    k_values = k_values
+  ) # Estimates error using nested cross-validation
+  
+  test_y <- factor(rep(c("A", "B"), each = 10000))
+  # Creates 20,000 balanced labels for independent testing
   
   test_x <- data.frame(
     x1 = rnorm(20000, mean = 0, sd = 1),
     x2 = rnorm(20000, mean = 0, sd = 1)
-  ) # Generates independent predictors from the same null distribution
+  ) # Generates a new independent test set
   
   test_pred <- knn(
-    train = x,
+    train = x_sim,
     test = test_x,
-    cl = class,
-    k = best_k
-  ) # Uses the optimized classifier to predict the independent test data
+    cl = y,
+    k = ordinary$best_k
+  ) # Uses the k selected by ordinary CV
   
-  test_error <- mean(test_pred != test_class) # Calculates the independent test-set error
+  test_error <- mean(test_pred != test_y)
+  # Calculates the independent test-set error
   
   c(
-    min_cv_error = min_cv_error,
-    nested_cv_error = nested_cv_error,
+    min_cv_error = ordinary$min_cv_error,
+    nested_cv_error = nested_error,
     test_error = test_error
-  ) # Returns the three error estimates from this simulation
+  ) # Returns the three error estimates
 }
 ```
 
+##### Repeating the experiment 500 times
+
+I now repeat the complete simulation 500 times. Each repetition generates a new training dataset and a new independent test set, allowing the three error estimates to be compared across repeated random samples.
+
 ```{r}
-set.seed(2026) # Makes the repeated simulation reproducible
+set.seed(2026) # Makes the complete repeated simulation reproducible
 
 sim_results <- replicate(
   500,
   run_one_simulation()
-) # Repeats the complete simulation 500 times
+) # Runs the entire experiment 500 times
 
-sim_results <- as.data.frame(t(sim_results)) # Converts the results into a data frame with one row per simulation
+sim_results <- as.data.frame(t(sim_results))
+# Converts the results so that each row represents one simulation
+# and each column represents one error-estimation method
 
-head(sim_results) # Displays the first six simulations
-
-colMeans(sim_results) # Calculates the average error from each method across all 500 simulations
+head(sim_results) # Displays the first six simulation results
 ```
-  
-#### 6. Simulation results
+
+#### Simulation results
+
+To compare the three error estimates across the 500 simulations, I first calculate their average values.
+
+```{r}
+colMeans(sim_results) # Calculates the average error for each method across all 500 simulations
+```
+
+I also compare the full distributions of the three error estimates. The dashed horizontal line represents the expected 50% classification error in the null setting.
 
 ```{r}
 boxplot(
@@ -504,18 +645,18 @@ boxplot(
   sim_results$nested_cv_error,
   sim_results$test_error,
   names = c("Minimum CV", "Nested CV", "Independent test"),
-  ylab = "Classification error"
-) # Compares the distributions of the three error estimates across 500 simulations
+  ylab = "Classification error",
+  main = "Error Estimates Across 500 Simulations"
+) # Compares the distributions of the three error estimates
 
-abline(h = 0.50, lty = 2) # Shows the expected 50% error under the null
+abline(h = 0.50, lty = 2) # Expected 50% error under the null
 ```
   
-## Conclusions
+### Conclusions
 
-Across 500 simulated null datasets, the minimum ordinary cross-validation error averaged 42.48%, while the independent test-set error was 49.98%. This shows that the minimum CV error after tuning made the classifier appear more accurate than it really was.
+Across 500 simulated null datasets, the minimum ordinary cross-validation error averaged `r round(100 * mean(sim_results$min_cv_error), 2)`%, while the independent test-set error averaged `r round(100 * mean(sim_results$test_error), 2)`%. This shows that reporting the minimum CV error after tuning made the classifier appear more accurate than it actually was on new data.
 
-Nested cross-validation produced an average error of 52.10%, which was much closer to the independent test-set error. This supports the main point of Varma and Simon (2006): when cross-validation is used to tune a model, the minimum CV error can be optimistically biased while nested cross-validation provided an estimate closer to the independent test-set error in this simulation.
+Nested cross-validation produced an average error of `r round(100 * mean(sim_results$nested_cv_error), 2)`%, which was much closer to the independent test-set error. This supports the main point of Varma and Simon (2006): when cross-validation is used both to tune a model and to report its performance, the minimum CV error can be optimistically biased. In this simulation, nested cross-validation provided an estimate closer to the independent test-set error.
 
-In this small-sample simulation, nested CV was also more variable across repetitions, so the improvement was mainly in reducing bias rather than producing a more stable estimate.
-  
+In this small-sample simulation, nested cross-validation was also more variable across repetitions. Its main advantage here was therefore reducing bias rather than producing a more stable estimate.
 
