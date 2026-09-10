@@ -1,10 +1,10 @@
 ---
-title: "Performance Measures"
+title: "Cross-Validation Selection Bias"
 ---
 
 ## Varma & Simon (2006)
 
-**Title:** Bias in error estimation when using cross-validation for model selection\
+**Title:** Bias in Error Estimation When Using Cross-Validation for Model Selection\
 **Journal:** BMC Bioinformatics
 
 ### Problem
