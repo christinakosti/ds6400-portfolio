@@ -182,6 +182,9 @@ window.Quarto = {
   <li><a href="#main-findings" id="toc-main-findings" class="nav-link" data-scroll-target="#main-findings"><span class="header-section-number">2.1.6</span> Main findings</a></li>
   <li><a href="#main-conclusion-stop-doing-x-start-doing-y" id="toc-main-conclusion-stop-doing-x-start-doing-y" class="nav-link" data-scroll-target="#main-conclusion-stop-doing-x-start-doing-y"><span class="header-section-number">2.1.7</span> Main conclusion: stop doing X, start doing Y</a></li>
   <li><a href="#proposed-computational-exploration" id="toc-proposed-computational-exploration" class="nav-link" data-scroll-target="#proposed-computational-exploration"><span class="header-section-number">2.1.8</span> Proposed computational exploration</a></li>
+  <li><a href="#planned-figure" id="toc-planned-figure" class="nav-link" data-scroll-target="#planned-figure"><span class="header-section-number">2.1.9</span> Planned figure</a></li>
+  <li><a href="#computational-exploration" id="toc-computational-exploration" class="nav-link" data-scroll-target="#computational-exploration"><span class="header-section-number">2.1.10</span> Computational exploration</a></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions"><span class="header-section-number">2.1.11</span> Conclusions</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -407,19 +410,25 @@ w\widehat{\mathrm{Err}}^{(1)}.
 <p>Using several different classifiers allowed the authors to examine whether the .632+ estimator performed well across both relatively smooth prediction rules and more flexible or unstable rules.</p>
 <section id="linear-discriminant-function-ldf" class="level4" data-number="2.1.4.1">
 <h4 data-number="2.1.4.1" class="anchored" data-anchor-id="linear-discriminant-function-ldf"><span class="header-section-number">2.1.4.1</span> Linear discriminant function (LDF)</h4>
-<p>The <strong>linear discriminant function (LDF)</strong> is equivalent to Fisher’s linear discriminant analysis. It classifies an observation by comparing how likely its predictor values are to belong to each possible class.</p>
-<p>For interpretation, suppose that the predictor vector for an observation is</p>
+<p>The <strong>linear discriminant function (LDF)</strong>, also known as linear discriminant analysis, is a classification method that assigns an observation to the class it is most likely to belong to based on its predictor values.</p>
+<p>Suppose an observation has <span class="math inline">\(p\)</span> predictors:</p>
 <p><span class="math display">\[
-\mathbf{x}=(x_1,x_2,\ldots,x_p).
+\mathbf{x}=(x_1,x_2,\ldots,x_p)^T.
 \]</span></p>
-<p>Linear discriminant analysis assumes that the predictors within each class approximately follow a multivariate normal distribution,</p>
+<p>Here, <span class="math inline">\(\mathbf{x}\)</span> represents the complete set of predictor values for one observation, and <span class="math inline">\(T\)</span> indicates that they are written as a column vector.</p>
+<p>LDF assumes that the predictors within each class approximately follow a multivariate normal distribution:</p>
 <p><span class="math display">\[
 \mathbf{X}\mid Y=k
 \sim
-N_p(\boldsymbol{\mu}_k,\Sigma),
+N_p(\boldsymbol{\mu}_k,\Sigma).
 \]</span></p>
-<p>where <span class="math inline">\(\boldsymbol{\mu}_k\)</span> represents the mean predictor vector for class <span class="math inline">\(k\)</span> and <span class="math inline">\(\Sigma\)</span> is a covariance matrix shared across the classes.</p>
-<p>For each class, a discriminant score can be calculated as</p>
+<p>In this notation:</p>
+<ul>
+<li><span class="math inline">\(\boldsymbol{\mu}_k\)</span> is the mean predictor vector for class <span class="math inline">\(k\)</span>, representing the typical predictor values for that class.</li>
+<li><span class="math inline">\(\Sigma\)</span> is the covariance matrix, which describes the variability of the predictors and how they are correlated.</li>
+<li>LDF assumes that the same covariance matrix <span class="math inline">\(\Sigma\)</span> applies to every class.</li>
+</ul>
+<p>For each possible class, LDF calculates a discriminant score:</p>
 <p><span class="math display">\[
 \delta_k(\mathbf{x})
 =
@@ -428,9 +437,14 @@ N_p(\boldsymbol{\mu}_k,\Sigma),
 \frac{1}{2}
 \boldsymbol{\mu}_k^T\Sigma^{-1}\boldsymbol{\mu}_k
 +
-\log(\pi_k),
+\log(\pi_k).
 \]</span></p>
-<p>where <span class="math inline">\(\pi_k\)</span> represents the prior probability of belonging to class <span class="math inline">\(k\)</span>.</p>
+<p>The components of this score can be interpreted as follows:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{x}^T\Sigma^{-1}\boldsymbol{\mu}_k\)</span> measures how well the new observation matches the predictor profile of class <span class="math inline">\(k\)</span>, while accounting for predictor variability and correlation.</li>
+<li><span class="math inline">\(-\frac{1}{2}\boldsymbol{\mu}_k^T\Sigma^{-1}\boldsymbol{\mu}_k\)</span> adjusts the score for the location of the class mean.</li>
+<li><span class="math inline">\(\pi_k\)</span> is the prior probability of belonging to class <span class="math inline">\(k\)</span>, so <span class="math inline">\(\log(\pi_k)\)</span> allows more common classes to receive appropriate weight.</li>
+</ul>
 <p>The observation is assigned to the class with the largest discriminant score:</p>
 <p><span class="math display">\[
 \widehat{Y}
@@ -438,12 +452,13 @@ N_p(\boldsymbol{\mu}_k,\Sigma),
 \underset{k}{\arg\max}\,
 \delta_k(\mathbf{x}).
 \]</span></p>
-<p>Because all classes are assumed to share the same covariance matrix, the resulting decision boundary is linear. LDF therefore represents a relatively smooth prediction rule compared with methods such as nearest-neighbor classification.</p>
+<p>Here, <span class="math inline">\(\arg\max\)</span> simply means <strong>choose the class <span class="math inline">\(k\)</span> that produces the largest score</strong>.</p>
+<p>Because all classes are assumed to share the same covariance matrix, the resulting decision boundary is linear. LDF therefore represents a relatively smooth classification rule compared with more flexible methods such as nearest-neighbor classification.</p>
 </section>
 <section id="nearest-neighbor" class="level4" data-number="2.1.4.2">
 <h4 data-number="2.1.4.2" class="anchored" data-anchor-id="nearest-neighbor"><span class="header-section-number">2.1.4.2</span> 1-nearest neighbor</h4>
-<p>The <strong>1-nearest-neighbor (1-NN)</strong> classifier makes predictions using the observation in the training dataset that is closest to the new observation.</p>
-<p>The distance between two observations can be measured using Euclidean distance:</p>
+<p>The <strong>1-nearest-neighbor (1-NN)</strong> classifier predicts the class of a new observation by finding the most similar observation in the training dataset.</p>
+<p>Similarity is usually measured using <strong>Euclidean distance</strong>:</p>
 <p><span class="math display">\[
 d(\mathbf{x}_i,\mathbf{x}_j)
 =
@@ -452,61 +467,90 @@ d(\mathbf{x}_i,\mathbf{x}_j)
 (x_{im}-x_{jm})^2
 }.
 \]</span></p>
-<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, the classifier identifies the training observation with the smallest distance:</p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{x}_i\)</span> and <span class="math inline">\(\mathbf{x}_j\)</span> are two observations.</li>
+<li><span class="math inline">\(p\)</span> is the number of predictors.</li>
+<li><span class="math inline">\(x_{im}\)</span> is the value of predictor <span class="math inline">\(m\)</span> for observation <span class="math inline">\(i\)</span>.</li>
+<li><span class="math inline">\(x_{jm}\)</span> is the value of predictor <span class="math inline">\(m\)</span> for observation <span class="math inline">\(j\)</span>.</li>
+<li>For each predictor, the difference between the two observations is squared.</li>
+<li>These squared differences are added together and the square root is taken.</li>
+</ul>
+<p>For example, if there are two predictors and the observations are</p>
+<p><span class="math display">\[
+\mathbf{x}_i=(2,3)
+\qquad\text{and}\qquad
+\mathbf{x}_j=(5,7),
+\]</span></p>
+<p>then</p>
+<p><span class="math display">\[
+d(\mathbf{x}_i,\mathbf{x}_j)
+=
+\sqrt{(2-5)^2+(3-7)^2}
+=
+\sqrt{9+16}
+=
+5.
+\]</span></p>
+<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, 1-NN compares its distance with every observation in the training dataset and identifies the one with the smallest distance:</p>
 <p><span class="math display">\[
 j^*
 =
 \underset{j}{\arg\min}\,
-d(\mathbf{x}_0,\mathbf{x}_j),
+d(\mathbf{x}_0,\mathbf{x}_j).
 \]</span></p>
-<p>and assigns the new observation the same class as that nearest neighbor:</p>
+<p>Here, <span class="math inline">\(\arg\min\)</span> means <strong>choose the training observation <span class="math inline">\(j\)</span> that gives the smallest distance</strong>. The symbol <span class="math inline">\(j^*\)</span> therefore represents the index of the nearest training observation.</p>
+<p>The new observation is then assigned the same class as that nearest neighbor:</p>
 <p><span class="math display">\[
 \widehat{Y}_0=Y_{j^*}.
 \]</span></p>
-<p>Unlike LDF, 1-NN can create highly irregular decision boundaries because its prediction can change whenever the identity of the nearest observation changes.</p>
-<p>This flexibility is particularly important in the context of the .632+ paper. When 1-NN is evaluated on the same observations used for training, each observation is its own nearest neighbor. The apparent training error can therefore be approximately zero even when the predictors contain no real information about the outcome.</p>
-<p>This makes 1-NN an important example of a prediction rule that can appear to perform extremely well on its training data while performing much worse on new observations.</p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\widehat{Y}_0\)</span> is the predicted class for the new observation.</li>
+<li><span class="math inline">\(Y_{j^*}\)</span> is the actual class of its nearest training observation.</li>
+</ul>
+<p>Unlike LDF, 1-NN can create highly irregular decision boundaries because its prediction can change whenever a different training observation becomes the closest one.</p>
 </section>
 <section id="nearest-neighbor-1" class="level4" data-number="2.1.4.3">
 <h4 data-number="2.1.4.3" class="anchored" data-anchor-id="nearest-neighbor-1"><span class="header-section-number">2.1.4.3</span> 3-nearest neighbor</h4>
 <p>The <strong>3-nearest-neighbor (3-NN)</strong> classifier follows the same general principle as 1-NN but uses the three closest training observations rather than only one.</p>
-<p>For a new observation, the three training observations with the smallest distances are identified. The predicted class is then determined by majority vote among those three neighbors.</p>
+<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, the distance to every training observation is calculated in the same way as for 1-NN. The three observations with the smallest distances are then selected.</p>
+<p>The predicted class is determined by <strong>majority vote</strong> among those three neighbors.</p>
 <p>For example, if the three nearest observations belong to</p>
 <p><span class="math display">\[
 \{A,A,B\},
 \]</span></p>
-<p>the new observation is classified as class <span class="math inline">\(A\)</span>.</p>
-<p>Because the prediction depends on several nearby observations instead of only one, 3-NN is generally smoother than 1-NN. However, it remains a local and relatively flexible prediction rule.</p>
-<p>Including both 1-NN and 3-NN allowed the authors to examine how the error estimators behaved when the flexibility of the nearest-neighbor prediction rule changed.</p>
-</section>
-<section id="classification-trees" class="level4" data-number="2.1.4.4">
-<h4 data-number="2.1.4.4" class="anchored" data-anchor-id="classification-trees"><span class="header-section-number">2.1.4.4</span> Classification trees</h4>
-<p>The authors also evaluated a <strong>classification tree</strong>.</p>
-<p>A classification tree repeatedly divides the predictor space into smaller regions using decision rules based on individual predictors. A simple split might take the form</p>
+<p>then two of the three neighbors belong to class <span class="math inline">\(A\)</span>, so the prediction is</p>
 <p><span class="math display">\[
-x_j &lt; c,
+\widehat{Y}_0=A.
 \]</span></p>
-<p>where <span class="math inline">\(x_j\)</span> is one predictor and <span class="math inline">\(c\)</span> is a selected cutoff value.</p>
-<p>Observations satisfying the condition are sent to one branch of the tree, while the remaining observations are sent to another. The procedure continues recursively, producing a collection of terminal regions or leaves.</p>
-<p>A new observation follows these decision rules through the tree until it reaches a terminal node, where it is assigned the class associated with that node.</p>
-<p>Because relatively small changes in the training data can sometimes produce different splits and therefore a different tree, classification trees can represent relatively unstable prediction rules. This makes them useful for studying whether bootstrap smoothing can reduce variability in estimated prediction error.</p>
+<p>In general, 3-NN can be thought of as assigning the new observation to the class that appears most frequently among its three nearest neighbors.</p>
+<p>Because the prediction depends on several nearby observations instead of only one, 3-NN is generally less sensitive to a single unusual training observation and therefore smoother than 1-NN.</p>
+<p>However, it remains a local and relatively flexible prediction rule because the classification still depends heavily on the observations located near the new data point.</p>
+<p>Including both 1-NN and 3-NN allowed the authors to examine how the prediction-error estimators behaved when the flexibility of the nearest-neighbor classifier changed.</p>
 </section>
-<section id="quadratic-discriminant-function-qdf" class="level4" data-number="2.1.4.5">
-<h4 data-number="2.1.4.5" class="anchored" data-anchor-id="quadratic-discriminant-function-qdf"><span class="header-section-number">2.1.4.5</span> Quadratic discriminant function (QDF)</h4>
-<p>The <strong>quadratic discriminant function (QDF)</strong> is related to LDF but allows each class to have its own covariance matrix.</p>
-<p>Instead of assuming</p>
+<section id="quadratic-discriminant-function-qdf" class="level4" data-number="2.1.4.4">
+<h4 data-number="2.1.4.4" class="anchored" data-anchor-id="quadratic-discriminant-function-qdf"><span class="header-section-number">2.1.4.4</span> Quadratic discriminant function (QDF)</h4>
+<p>The <strong>quadratic discriminant function (QDF)</strong> is closely related to LDF, but it makes a less restrictive assumption about how the predictors vary within each class.</p>
+<p>LDF assumes that all classes share the same covariance matrix:</p>
 <p><span class="math display">\[
 \mathbf{X}\mid Y=k
 \sim
-N_p(\boldsymbol{\mu}_k,\Sigma),
+N_p(\boldsymbol{\mu}_k,\Sigma).
 \]</span></p>
-<p>QDF allows</p>
+<p>QDF instead allows each class to have its own covariance matrix:</p>
 <p><span class="math display">\[
 \mathbf{X}\mid Y=k
 \sim
 N_p(\boldsymbol{\mu}_k,\Sigma_k).
 \]</span></p>
-<p>A standard quadratic discriminant score can be written as</p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\boldsymbol{\mu}_k\)</span> is the mean predictor vector for class <span class="math inline">\(k\)</span>.</li>
+<li><span class="math inline">\(\Sigma_k\)</span> is the covariance matrix for class <span class="math inline">\(k\)</span>.</li>
+<li>The subscript <span class="math inline">\(k\)</span> indicates that the pattern of variability and correlation between predictors is allowed to differ across classes.</li>
+</ul>
+<p>For each possible class, QDF calculates a discriminant score:</p>
 <p><span class="math display">\[
 \delta_k(\mathbf{x})
 =
@@ -518,18 +562,27 @@ N_p(\boldsymbol{\mu}_k,\Sigma_k).
 +
 \log(\pi_k).
 \]</span></p>
-<p>The predicted class is again the class with the largest discriminant score:</p>
+<p>The main components can be interpreted as follows:</p>
+<ul>
+<li><span class="math inline">\((\mathbf{x}-\boldsymbol{\mu}_k)\)</span> measures how far the new observation is from the mean of class <span class="math inline">\(k\)</span>.</li>
+<li><span class="math inline">\(\Sigma_k^{-1}\)</span> adjusts that distance for the variability and correlations within class <span class="math inline">\(k\)</span>.</li>
+<li><span class="math inline">\(|\Sigma_k|\)</span> is the determinant of the covariance matrix and reflects the overall spread of the class distribution.</li>
+<li><span class="math inline">\(\pi_k\)</span> is the prior probability of belonging to class <span class="math inline">\(k\)</span>.</li>
+</ul>
+<p>The observation is assigned to the class with the largest discriminant score:</p>
 <p><span class="math display">\[
 \widehat{Y}
 =
 \underset{k}{\arg\max}\,
 \delta_k(\mathbf{x}).
 \]</span></p>
-<p>Because the covariance matrix can differ between classes, the resulting decision boundaries can be curved rather than linear. QDF is therefore more flexible than LDF but also requires estimating more parameters from the training data.</p>
+<p>As before, <span class="math inline">\(\arg\max\)</span> simply means <strong>choose the class that produces the largest score</strong>.</p>
+<p>The key difference from LDF is that QDF allows <span class="math inline">\(\Sigma_k\)</span> to differ between classes. Because the covariance structure is no longer shared, the quadratic terms do not cancel, and the resulting decision boundary can be curved rather than linear.</p>
+<p>QDF is therefore more flexible than LDF, but it also requires estimating more parameters from the training data.</p>
 </section>
-<section id="why-use-several-different-classifiers" class="level4" data-number="2.1.4.6">
-<h4 data-number="2.1.4.6" class="anchored" data-anchor-id="why-use-several-different-classifiers"><span class="header-section-number">2.1.4.6</span> Why use several different classifiers?</h4>
-<p>The classifiers used in the experiments represent prediction rules with different levels of smoothness and flexibility.</p>
+<section id="why-use-several-different-classifiers" class="level4" data-number="2.1.4.5">
+<h4 data-number="2.1.4.5" class="anchored" data-anchor-id="why-use-several-different-classifiers"><span class="header-section-number">2.1.4.5</span> Why use several different classifiers?</h4>
+<p>The classifiers used in the experiments represent prediction rules with different levels of smoothness, flexibility, and stability.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -561,6 +614,7 @@ N_p(\boldsymbol{\mu}_k,\Sigma_k).
 </tbody>
 </table>
 <p>This diversity was important because the authors were not only interested in whether .632+ worked for one particular classifier. They wanted to determine whether its bias and variability advantages remained useful across prediction problems with substantially different types of prediction rules.</p>
+<p>Using classifiers with different levels of flexibility also allowed the authors to examine how the error estimators behaved when the underlying prediction rule was more or less prone to overfitting or instability.</p>
 </section>
 </section>
 <section id="bootstrap-implementation" class="level3" data-number="2.1.5">
@@ -570,15 +624,17 @@ N_p(\boldsymbol{\mu}_k,\Sigma_k).
 B = 50
 \]</span></p>
 <p>bootstrap replications.</p>
-<p>Each bootstrap sample contained <span class="math inline">\(n\)</span> draws with replacement from the original training dataset of <span class="math inline">\(n\)</span> observations. The prediction rule was fitted separately to each bootstrap sample.</p>
-<p>The important feature of the procedure is that an observation was evaluated only using bootstrap samples in which that observation had <strong>not</strong> been selected.</p>
+<p>Each bootstrap sample contained <span class="math inline">\(n\)</span> draws with replacement from the original training dataset of <span class="math inline">\(n\)</span> observations. Because sampling is performed with replacement, some observations may appear multiple times in a bootstrap sample, while others may not appear at all.</p>
+<p>The prediction rule was fitted separately to each bootstrap sample.</p>
+<p>The important feature of the procedure is that an original observation was evaluated only using bootstrap samples in which that observation had <strong>not</strong> been selected. This ensures that the observation being tested was not used to train that particular model.</p>
 <p>Suppose the original training dataset is</p>
 <p><span class="math display">\[
 \mathcal{D}
 =
 \{(\mathbf{x}_i,y_i)\}_{i=1}^{n},
 \]</span></p>
-<p>and let</p>
+<p>where <span class="math inline">\(\mathbf{x}_i\)</span> represents the predictor values for observation <span class="math inline">\(i\)</span> and <span class="math inline">\(y_i\)</span> represents its true class.</p>
+<p>Let</p>
 <p><span class="math display">\[
 \mathcal{D}^{*b}
 \]</span></p>
@@ -586,7 +642,8 @@ B = 50
 <p><span class="math display">\[
 b=1,\ldots,B.
 \]</span></p>
-<p>For each original observation <span class="math inline">\(i\)</span>, define an indicator</p>
+<p>The asterisk indicates that this is a resampled version of the original dataset, and <span class="math inline">\(b\)</span> identifies which bootstrap replication is being considered.</p>
+<p>For each original observation <span class="math inline">\(i\)</span>, define</p>
 <p><span class="math display">\[
 I_i^b
 =
@@ -595,15 +652,22 @@ I_i^b
 0, &amp; \text{if observation } i \text{ is included in bootstrap sample } b.
 \end{cases}
 \]</span></p>
-<p>The model fitted using bootstrap sample <span class="math inline">\(b\)</span> is then used to predict observation <span class="math inline">\(i\)</span> only when <span class="math inline">\(I_i^b=1\)</span>.</p>
-<p>For classification with 0-1 loss, the prediction error for observation <span class="math inline">\(i\)</span> from bootstrap sample <span class="math inline">\(b\)</span> can be written as</p>
+<p>Thus, <span class="math inline">\(I_i^b\)</span> tells us whether observation <span class="math inline">\(i\)</span> can be used as a test observation for bootstrap sample <span class="math inline">\(b\)</span>.</p>
+<p>If</p>
+<p><span class="math display">\[
+I_i^b=1,
+\]</span></p>
+<p>the model fitted using bootstrap sample <span class="math inline">\(b\)</span> is used to predict observation <span class="math inline">\(i\)</span>.</p>
+<p>For classification with 0-1 loss, define the prediction error as</p>
 <p><span class="math display">\[
 Q_i^b
 =
-I(\widehat{Y}_i^b \neq Y_i),
+\begin{cases}
+1, &amp; \text{if the model predicts observation } i \text{ incorrectly},\\
+0, &amp; \text{if the prediction is correct}.
+\end{cases}
 \]</span></p>
-<p>where <span class="math inline">\(Q_i^b=1\)</span> when the observation is classified incorrectly and <span class="math inline">\(Q_i^b=0\)</span> when it is classified correctly.</p>
-<p>For each original observation, the errors from all bootstrap samples in which that observation was omitted are averaged:</p>
+<p>For each original observation, the prediction errors are then averaged across only the bootstrap samples in which that observation was omitted:</p>
 <p><span class="math display">\[
 \widehat{e}_i
 =
@@ -613,7 +677,18 @@ I(\widehat{Y}_i^b \neq Y_i),
 \sum_{b=1}^{B} I_i^b
 }.
 \]</span></p>
-<p>The <strong>leave-one-out bootstrap error</strong> is then obtained by averaging these errors across all <span class="math inline">\(n\)</span> original observations:</p>
+<p>The numerator,</p>
+<p><span class="math display">\[
+\sum_{b=1}^{B} I_i^b Q_i^b,
+\]</span></p>
+<p>counts the prediction errors for observation <span class="math inline">\(i\)</span> across bootstrap samples in which it was left out.</p>
+<p>The denominator,</p>
+<p><span class="math display">\[
+\sum_{b=1}^{B} I_i^b,
+\]</span></p>
+<p>counts how many bootstrap samples left observation <span class="math inline">\(i\)</span> out.</p>
+<p>Their ratio therefore represents the average prediction error for observation <span class="math inline">\(i\)</span> when it was evaluated using models that had not been trained on it.</p>
+<p>Finally, these observation-specific errors are averaged across all <span class="math inline">\(n\)</span> original observations:</p>
 <p><span class="math display">\[
 \widehat{\mathrm{Err}}^{(1)}
 =
@@ -621,7 +696,8 @@ I(\widehat{Y}_i^b \neq Y_i),
 \sum_{i=1}^{n}
 \widehat{e}_i.
 \]</span></p>
-<p>This procedure is conceptually similar to cross-validation because an observation is evaluated only by models that were trained without that observation. The difference is that bootstrap estimation averages predictions across many resampled training datasets rather than using a single predefined set of cross-validation folds.</p>
+<p>This gives the <strong>leave-one-out bootstrap error</strong>.</p>
+<p>Conceptually, this procedure is similar to cross-validation because an observation is evaluated only by models that were trained without that observation. The difference is that bootstrap estimation repeatedly resamples the training dataset with replacement and averages prediction errors across many different resampled training sets.</p>
 <p>The complete bootstrap procedure can therefore be summarized as:</p>
 <ol type="1">
 <li>Draw a bootstrap sample of size <span class="math inline">\(n\)</span> from the original training dataset with replacement.</li>
@@ -662,13 +738,46 @@ I(\widehat{Y}_i^b \neq Y_i),
 +
 0.632\,\widehat{\mathrm{Err}}^{(1)}.
 \]</span></p>
-<p>For the .632+ estimator, the authors additionally calculate the relative overfitting rate <span class="math inline">\(R\)</span> and use it to determine the adaptive bootstrap weight</p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\mathrm{err}\)</span> is the <strong>apparent training error</strong>, calculated on the same observations used to fit the model.</li>
+<li><span class="math inline">\(\widehat{\mathrm{Err}}^{(1)}\)</span> is the <strong>leave-one-out bootstrap error</strong>, calculated using observations that were omitted from the bootstrap samples used for training.</li>
+</ul>
+<p>The apparent training error is usually optimistic, while the leave-one-out bootstrap error can be somewhat pessimistic. The .632 estimator combines the two, giving 36.8% weight to the apparent training error and 63.2% weight to the bootstrap error.</p>
+<p>However, this fixed weighting can still produce an overly optimistic estimate when the model strongly overfits the training data.</p>
+<p>To address this problem, the .632+ estimator first measures the degree of overfitting using the <strong>relative overfitting rate</strong>, <span class="math inline">\(R\)</span>:</p>
+<p><span class="math display">\[
+R
+=
+\frac{
+\widehat{\mathrm{Err}}^{(1)}-\mathrm{err}
+}{
+\gamma-\mathrm{err}
+}.
+\]</span></p>
+<p>Here, <span class="math inline">\(\gamma\)</span> represents the <strong>no-information error rate</strong>, or the error expected if the predictors contained no useful information about the outcome.</p>
+<p>Conceptually:</p>
+<ul>
+<li><span class="math inline">\(R\approx0\)</span> indicates little evidence of overfitting.</li>
+<li><span class="math inline">\(R\approx1\)</span> indicates severe overfitting, where performance on unseen observations approaches the no-information error level.</li>
+</ul>
+<p>The value of <span class="math inline">\(R\)</span> is then used to calculate an adaptive bootstrap weight:</p>
 <p><span class="math display">\[
 w
 =
 \frac{0.632}{1-0.368R}.
 \]</span></p>
-<p>The final .632+ estimate is then</p>
+<p>When there is little overfitting and <span class="math inline">\(R\)</span> is close to 0,</p>
+<p><span class="math display">\[
+w\approx0.632,
+\]</span></p>
+<p>so the .632+ estimator behaves similarly to the original .632 estimator.</p>
+<p>As overfitting becomes more severe and <span class="math inline">\(R\)</span> approaches 1,</p>
+<p><span class="math display">\[
+w\rightarrow1.
+\]</span></p>
+<p>The .632+ estimator therefore places progressively more weight on the bootstrap error and less weight on the potentially overly optimistic training error.</p>
+<p>The final .632+ estimate is</p>
 <p><span class="math display">\[
 \widehat{\mathrm{Err}}_{.632+}
 =
@@ -676,7 +785,7 @@ w
 +
 w\widehat{\mathrm{Err}}^{(1)}.
 \]</span></p>
-<p>Thus, the same set of bootstrap replications first provides the leave-one-out bootstrap error, which is then used to calculate the .632 and .632+ prediction-error estimates.</p>
+<p>Thus, the same set of bootstrap replications first provides the leave-one-out bootstrap error, which is then used to calculate both the .632 and .632+ prediction-error estimates. The key difference is that .632 uses fixed weights, whereas .632+ adapts the weights according to the estimated degree of overfitting.</p>
 </section>
 <section id="main-findings" class="level3" data-number="2.1.6">
 <h3 data-number="2.1.6" class="anchored" data-anchor-id="main-findings"><span class="header-section-number">2.1.6</span> Main findings</h3>
@@ -738,12 +847,517 @@ RMS\left(\widehat{\mathrm{Err}}_{\mathrm{CV}}\right)
 </section>
 <section id="main-conclusion-stop-doing-x-start-doing-y" class="level3" data-number="2.1.7">
 <h3 data-number="2.1.7" class="anchored" data-anchor-id="main-conclusion-stop-doing-x-start-doing-y"><span class="header-section-number">2.1.7</span> Main conclusion: stop doing X, start doing Y</h3>
-<p><strong>Stop:</strong> relying only on leave-one-out cross-validation when estimating prediction error, especially when the resulting estimate may be highly variable, and avoid using the original .632 estimator without accounting for strong overfitting.</p>
-<p><strong>Start:</strong> use the .632+ bootstrap estimator when a lower-variance estimate of prediction error is desired, particularly in settings where the fitted prediction rule may overfit the training data.</p>
-<p>Takeaway: The .632+ estimator improves the overall estimation of prediction error by adaptively balancing the optimistic apparent training error with the bootstrap error, producing a better bias–variance trade-off than ordinary cross-validation in the authors’ experiments.</p>
+<p><strong>Stop:</strong> assuming that an approximately unbiased prediction-error estimator is necessarily the best estimator if its estimates are highly variable, and avoid relying on the original .632 estimator when strong overfitting may make the apparent training error extremely optimistic.</p>
+<p><strong>Start:</strong> consider the .632+ bootstrap estimator as a way to obtain a better balance between bias and variability, particularly when the prediction rule may be unstable or prone to overfitting.</p>
+<p><strong>Takeaway:</strong> In the authors’ simulation experiments, the .632+ estimator was the best overall performer, combining relatively low variability with only moderate bias. Its main advantage was not that it completely eliminated bias, but that its adaptive weighting produced a better overall bias–variance compromise than the competing methods.</p>
+<p>The authors nevertheless caution that these conclusions are based on a finite set of simulation experiments and should not be interpreted as evidence that .632+ will necessarily outperform cross-validation in every prediction problem.</p>
 </section>
 <section id="proposed-computational-exploration" class="level3" data-number="2.1.8">
 <h3 data-number="2.1.8" class="anchored" data-anchor-id="proposed-computational-exploration"><span class="header-section-number">2.1.8</span> Proposed computational exploration</h3>
+<p>To illustrate the main argument of Efron and Tibshirani, I will simulate a simple <strong>no-information binary classification problem</strong> using a 1-nearest-neighbor classifier. This simulation is designed as a simplified reproduction of <strong>Experiment 8</strong> from Efron and Tibshirani, which used a 1-nearest-neighbor classifier with <span class="math inline">\(n=20\)</span>, two predictors, and a no-information data-generating process in which the true prediction error was 0.50.</p>
+<p>Each simulated dataset will contain <span class="math inline">\(n=20\)</span> observations and two normally distributed predictors. The binary outcome will be generated independently of the predictors, so there is no true predictive signal and the true prediction error is</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+<p>For each simulated dataset, I will calculate:</p>
+<ul>
+<li>the apparent training error,</li>
+<li>leave-one-out cross-validation error,</li>
+<li>leave-one-out bootstrap error using <span class="math inline">\(B=50\)</span> bootstrap samples,</li>
+<li>the .632 estimate,</li>
+<li>and the .632+ estimate.</li>
+</ul>
+<p>The complete simulation will be repeated 500 times using independently generated datasets. Repeating the experiment allows the behavior of each prediction-error estimator to be evaluated across samples.</p>
+<p>Following the general evaluation approach used by Efron and Tibshirani, the estimators will be compared using:</p>
+<ul>
+<li><strong>Exp:</strong> the average estimated prediction error across simulations,</li>
+<li><strong>SD:</strong> the standard deviation of the estimates across simulations,</li>
+<li><strong>RMS:</strong> the root mean squared error relative to the known true error.</li>
+</ul>
+<p>Bias will also be calculated as</p>
+<p><span class="math display">\[
+\mathrm{Bias}
+=
+\mathrm{Exp}
+-
+\mathrm{Err},
+\]</span></p>
+<p>to show whether each estimator tends to overestimate or underestimate the true prediction error.</p>
+<p>This exploration is intended to demonstrate how strong overfitting can make the original .632 estimator overly optimistic and how the adaptive weighting of .632+ can improve the overall bias–variance compromise.</p>
+</section>
+<section id="planned-figure" class="level3" data-number="2.1.9">
+<h3 data-number="2.1.9" class="anchored" data-anchor-id="planned-figure"><span class="header-section-number">2.1.9</span> Planned figure</h3>
+<p>The main figure will compare the distributions of the four prediction-error estimators across the repeated simulations:</p>
+<p><span class="math display">\[
+\text{LOOCV},
+\qquad
+\widehat{\mathrm{Err}}^{(1)},
+\qquad
+\widehat{\mathrm{Err}}_{.632},
+\qquad
+\widehat{\mathrm{Err}}_{.632+}.
+\]</span></p>
+<p>A vertical reference line at</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50
+\]</span></p>
+<p>will indicate the known true prediction error. The location of each distribution relative to this line will illustrate bias, while the spread of each distribution will illustrate variability.</p>
+</section>
+<section id="computational-exploration" class="level3" data-number="2.1.10">
+<h3 data-number="2.1.10" class="anchored" data-anchor-id="computational-exploration"><span class="header-section-number">2.1.10</span> Computational exploration</h3>
+<section id="phase-1-define-the-functions-used-in-the-simulation" class="level4" data-number="2.1.10.1">
+<h4 data-number="2.1.10.1" class="anchored" data-anchor-id="phase-1-define-the-functions-used-in-the-simulation"><span class="header-section-number">2.1.10.1</span> Phase 1: Define the functions used in the simulation</h4>
+<p>The computational exploration requires two functions. The first performs prediction using a <strong>1-nearest-neighbor (1-NN)</strong> classifier. The second generates one no-information dataset and calculates all prediction-error estimates for that dataset.</p>
+<section id="nn-prediction-function" class="level5" data-number="2.1.10.1.1">
+<h5 data-number="2.1.10.1.1" class="anchored" data-anchor-id="nn-prediction-function"><span class="header-section-number">2.1.10.1.1</span> 1-NN prediction function</h5>
+<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, 1-NN compares it with every training observation <span class="math inline">\(\mathbf{x}_j\)</span> using Euclidean distance:</p>
+<p><span class="math display">\[
+d(\mathbf{x}_0,\mathbf{x}_j)
+=
+\sqrt{
+\sum_{m=1}^{p}
+(x_{0m}-x_{jm})^2
+}.
+\]</span></p>
+<p>The nearest training observation is</p>
+<p><span class="math display">\[
+j^*
+=
+\underset{j}{\arg\min}\,
+d(\mathbf{x}_0,\mathbf{x}_j),
+\]</span></p>
+<p>and the predicted class is</p>
+<p><span class="math display">\[
+\widehat{Y}_0
+=
+Y_{j^*}.
+\]</span></p>
+<p>Because taking the square root does not change which distance is smallest, the code uses <strong>squared Euclidean distance</strong>:</p>
+<p><span class="math display">\[
+d^2(\mathbf{x}_0,\mathbf{x}_j)
+=
+\sum_{m=1}^{p}
+(x_{0m}-x_{jm})^2.
+\]</span></p>
+<p>The prediction function therefore performs four steps:</p>
+<ol type="1">
+<li>Compare the new observation with every training observation.</li>
+<li>Calculate the squared Euclidean distance to each training observation.</li>
+<li>Identify the observation with the smallest distance.</li>
+<li>Assign the new observation the class of that nearest neighbor.</li>
+</ol>
+</section>
+<section id="one-complete-simulation" class="level5" data-number="2.1.10.1.2">
+<h5 data-number="2.1.10.1.2" class="anchored" data-anchor-id="one-complete-simulation"><span class="header-section-number">2.1.10.1.2</span> One complete simulation</h5>
+<p>The second function, <code>run_one_simulation()</code>, defines the complete procedure that will be carried out for <strong>one simulated dataset</strong>.</p>
+<p>For each dataset, the function:</p>
+<ol type="1">
+<li>generates <span class="math inline">\(n=20\)</span> observations from a no-information binary classification problem,</li>
+<li>calculates the apparent training error,</li>
+<li>calculates leave-one-out cross-validation error,</li>
+<li>calculates leave-one-out bootstrap error using <span class="math inline">\(B=50\)</span> bootstrap samples,</li>
+<li>calculates the original .632 estimate,</li>
+<li>calculates the .632+ estimate, including <span class="math inline">\(\widehat{\gamma}\)</span>, <span class="math inline">\(R\)</span>, and the adaptive weight <span class="math inline">\(w\)</span>,</li>
+<li>returns all of these quantities for that simulated dataset.</li>
+</ol>
+<p>At this stage, the function only defines how <strong>one experiment</strong> is performed. In later phases, this entire function will be repeated across 500 independently generated datasets.</p>
+<p>Repeating the experiment will allow the estimators to be compared across samples using <strong>Exp</strong>, <strong>SD</strong>, and <strong>RMS</strong>, as described in the proposed computational exploration, with the known true prediction error</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+<p>First, two predictors are generated independently from standard normal distributions:</p>
+<p><span class="math display">\[
+X_{i1},X_{i2}\sim N(0,1).
+\]</span></p>
+<p>The binary outcome is generated independently of the predictors:</p>
+<p><span class="math display">\[
+Y_i\sim\mathrm{Bernoulli}(0.50).
+\]</span></p>
+<p>Because the outcome is independent of the predictors, the dataset contains <strong>no predictive signal</strong>. The population-level prediction error for this balanced two-class problem is therefore</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+<p>The function then calculates the following error estimates.</p>
+<p><strong>Apparent training error</strong></p>
+<p>The 1-NN classifier is evaluated on the same observations used to train it:</p>
+<p><span class="math display">\[
+\mathrm{err}
+=
+\frac{1}{n}
+\sum_{i=1}^{n}
+I(\widehat{Y}_i\neq Y_i).
+\]</span></p>
+<p>Because each training observation is its own nearest neighbor, its distance from itself is zero. The apparent training error is therefore expected to be approximately</p>
+<p><span class="math display">\[
+\mathrm{err}=0.
+\]</span></p>
+<p><strong>Leave-one-out cross-validation</strong></p>
+<p>For each observation <span class="math inline">\(i\)</span>, the classifier is trained using the other <span class="math inline">\(n-1\)</span> observations and then used to predict the omitted observation:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{CV}}
+=
+\frac{1}{n}
+\sum_{i=1}^{n}
+I(\widehat{Y}_i^{(-i)}\neq Y_i).
+\]</span></p>
+<p>Here, <span class="math inline">\(\widehat{Y}_i^{(-i)}\)</span> represents the prediction for observation <span class="math inline">\(i\)</span> from a model trained without that observation.</p>
+<p><strong>Leave-one-out bootstrap error</strong></p>
+<p>For each of</p>
+<p><span class="math display">\[
+B=50
+\]</span></p>
+<p>bootstrap replications, <span class="math inline">\(n\)</span> observations are sampled with replacement from the original dataset.</p>
+<p>The classifier is fitted to the bootstrap sample and evaluated only on original observations that were omitted from that sample. Prediction errors are averaged for each observation across the bootstrap samples in which it was omitted, and these observation-level errors are then averaged to obtain</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p><strong>Original .632 estimator</strong></p>
+<p>The apparent training error and bootstrap error are combined as</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}
+=
+0.368\,\mathrm{err}
++
+0.632\,\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p>Because the apparent error for 1-NN is approximately zero in this setting, the .632 estimate may be pulled substantially below the true error of 0.50.</p>
+<p><strong>.632+ estimator</strong></p>
+<p>The .632+ estimator additionally measures the degree of overfitting.</p>
+<p>For binary nearest-neighbor classification, the no-information error rate can be estimated from the observed proportion of class-1 outcomes, <span class="math inline">\(\widehat p\)</span>, using</p>
+<p><span class="math display">\[
+\widehat{\gamma}
+=
+2\widehat{p}(1-\widehat{p}).
+\]</span></p>
+<p>For the implementation used in the simulation experiments, the bootstrap error is first limited by the estimated no-information error:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}
+=
+\min\left(
+\widehat{\mathrm{Err}}^{(1)},
+\widehat{\gamma}
+\right).
+\]</span></p>
+<p>The relative overfitting rate is then calculated using this adjusted bootstrap error:</p>
+<p><span class="math display">\[
+R
+=
+\frac{
+\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}-\mathrm{err}
+}{
+\widehat{\gamma}-\mathrm{err}
+}.
+\]</span></p>
+<p>If the bootstrap error does not exceed the apparent error, <span class="math inline">\(R\)</span> is set to 0. Otherwise, the adjustment above keeps <span class="math inline">\(R\)</span> between 0 and 1.</p>
+<p>The adaptive weight is</p>
+<p><span class="math display">\[
+w
+=
+\frac{0.632}{1-0.368R},
+\]</span></p>
+<p>and the final estimate is</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632+}
+=
+(1-w)\mathrm{err}
++
+w\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}.
+\]</span></p>
+<p>As overfitting becomes more severe, <span class="math inline">\(R\)</span> approaches 1 and <span class="math inline">\(w\)</span> approaches 1. The .632+ estimator therefore places progressively less weight on the overly optimistic apparent training error.</p>
+</section>
+</section>
+<section id="phase-2-examine-one-simulated-dataset" class="level4" data-number="2.1.10.2">
+<h4 data-number="2.1.10.2" class="anchored" data-anchor-id="phase-2-examine-one-simulated-dataset"><span class="header-section-number">2.1.10.2</span> Phase 2: Examine one simulated dataset</h4>
+<p>Before repeating the experiment 500 times, I first run the complete procedure on a single simulated dataset. This allows the individual quantities used by the .632 and .632+ estimators to be inspected before examining their behavior across repeated samples.</p>
+<p>A fixed random seed is used so that this example can be reproduced exactly.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Prediction-error estimates from one simulated no-information dataset</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Quantity</th>
+<th style="text-align: right;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Apparent training error</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LOOCV error</td>
+<td style="text-align: right;">0.500</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Leave-one-out bootstrap error</td>
+<td style="text-align: right;">0.534</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">.632 error</td>
+<td style="text-align: right;">0.338</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">No-information error (gamma)</td>
+<td style="text-align: right;">0.495</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Relative overfitting rate (R)</td>
+<td style="text-align: right;">1.000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">.632+ weight (w)</td>
+<td style="text-align: right;">1.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">.632+ error</td>
+<td style="text-align: right;">0.495</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>In this simulated dataset, the apparent training error was</p>
+<p><span class="math display">\[
+\mathrm{err}=0,
+\]</span></p>
+<p>showing the extreme overfitting behavior of 1-NN when evaluated on its own training observations.</p>
+<p>Leave-one-out cross-validation produced an error estimate of</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{CV}}=0.500,
+\]</span></p>
+<p>which exactly matched the known true prediction error. The leave-one-out bootstrap estimate was slightly higher:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}^{(1)}=0.534.
+\]</span></p>
+<p>The original .632 estimator produced a substantially lower estimate:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}=0.338.
+\]</span></p>
+<p>This occurred because the estimator retained 36.8% weight on the apparent training error of zero, pulling the estimate downward.</p>
+<p>The estimated no-information error was</p>
+<p><span class="math display">\[
+\widehat{\gamma}=0.495,
+\]</span></p>
+<p>which was very close to the population no-information error of 0.50. The relative overfitting rate reached</p>
+<p><span class="math display">\[
+R=1,
+\]</span></p>
+<p>causing the adaptive .632+ weight to become</p>
+<p><span class="math display">\[
+w=1.
+\]</span></p>
+<p>Because the leave-one-out bootstrap error of 0.534 exceeded the estimated no-information error of 0.495, the adjusted bootstrap error used by .632+ was</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}=0.495.
+\]</span></p>
+<p>With <span class="math inline">\(R=1\)</span> and <span class="math inline">\(w=1\)</span>, the .632+ estimator therefore placed all of its weight on this adjusted bootstrap error, producing</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632+}=0.495.
+\]</span></p>
+<p>This single example clearly illustrates the problem that motivated .632+: the original .632 estimator can be strongly optimistic when the apparent training error is extremely small.</p>
+<p>However, one simulated dataset cannot determine which estimator performs best overall. The next phase therefore repeats the complete experiment across 500 independently generated datasets to compare the estimators in terms of <strong>Exp, bias, SD, and RMS</strong>.</p>
+</section>
+<section id="phase-3-repeat-the-experiment-across-500-datasets" class="level4" data-number="2.1.10.3">
+<h4 data-number="2.1.10.3" class="anchored" data-anchor-id="phase-3-repeat-the-experiment-across-500-datasets"><span class="header-section-number">2.1.10.3</span> Phase 3: Repeat the experiment across 500 datasets</h4>
+<p>The results from one simulated dataset may depend heavily on random sampling. To evaluate the systematic behavior of the prediction-error estimators, the complete simulation is therefore repeated</p>
+<p><span class="math display">\[
+S=500
+\]</span></p>
+<p>times.</p>
+<p>For each repetition, a completely new no-information dataset of <span class="math inline">\(n=20\)</span> observations is generated and the entire procedure defined in <code>run_one_simulation()</code> is repeated.</p>
+<p>Thus, for simulation</p>
+<p><span class="math display">\[
+s=1,\ldots,500,
+\]</span></p>
+<p>the procedure produces separate estimates of</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{CV},s},
+\qquad
+\widehat{\mathrm{Err}}^{(1)}_s,
+\qquad
+\widehat{\mathrm{Err}}_{.632,s},
+\qquad
+\widehat{\mathrm{Err}}_{.632+,s}.
+\]</span></p>
+<p>Repeating the experiment creates a distribution of 500 estimates for each method. These distributions can then be used to determine whether an estimator is systematically biased and how much it varies across independently generated training samples.</p>
+<p>A fixed random seed is again used so that the complete repeated simulation is reproducible.</p>
+<p>The resulting dataset therefore contains <strong>500 independent simulation results</strong>, with one row representing each simulated training dataset.</p>
+<p>The next phase uses these repeated results to compare the estimators in terms of <strong>Exp, bias, SD, and RMS</strong> relative to the known true prediction error of</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+</section>
+<section id="phase-4-compare-estimator-performance-across-simulations" class="level4" data-number="2.1.10.4">
+<h4 data-number="2.1.10.4" class="anchored" data-anchor-id="phase-4-compare-estimator-performance-across-simulations"><span class="header-section-number">2.1.10.4</span> Phase 4: Compare estimator performance across simulations</h4>
+<p>The 500 repeated simulations are now summarized to compare the performance of the four prediction-error estimators against the known true error of 0.50.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Performance of prediction-error estimators across 500 simulated datasets</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">Exp</th>
+<th style="text-align: right;">Bias</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: right;">RMS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LOOCV</td>
+<td style="text-align: right;">0.494</td>
+<td style="text-align: right;">-0.006</td>
+<td style="text-align: right;">0.145</td>
+<td style="text-align: right;">0.145</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bootstrap</td>
+<td style="text-align: right;">0.496</td>
+<td style="text-align: right;">-0.004</td>
+<td style="text-align: right;">0.109</td>
+<td style="text-align: right;">0.109</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">.632</td>
+<td style="text-align: right;">0.313</td>
+<td style="text-align: right;">-0.187</td>
+<td style="text-align: right;">0.069</td>
+<td style="text-align: right;">0.199</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">.632+</td>
+<td style="text-align: right;">0.432</td>
+<td style="text-align: right;">-0.068</td>
+<td style="text-align: right;">0.080</td>
+<td style="text-align: right;">0.105</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The table allows the methods to be compared simultaneously in terms of their average estimate, systematic bias, variability, and overall estimation error.</p>
+<p>The repeated simulations reveal a clear bias–variance trade-off between the four estimators.</p>
+<p>LOOCV was nearly unbiased, with</p>
+<p><span class="math display">\[
+\mathrm{Exp}=0.494
+\]</span></p>
+<p>compared with the true error of 0.50. However, it also had the largest standard deviation,</p>
+<p><span class="math display">\[
+\mathrm{SD}=0.145,
+\]</span></p>
+<p>showing that its estimates varied considerably across training samples.</p>
+<p>The leave-one-out bootstrap estimate was also nearly unbiased,</p>
+<p><span class="math display">\[
+\mathrm{Exp}=0.496,
+\]</span></p>
+<p>but had substantially lower variability than LOOCV, with</p>
+<p><span class="math display">\[
+\mathrm{SD}=0.109.
+\]</span></p>
+<p>The original .632 estimator had the smallest SD at 0.069, but this stability came at the cost of substantial downward bias. Its average estimated error was only</p>
+<p><span class="math display">\[
+\mathrm{Exp}=0.313,
+\]</span></p>
+<p>giving a bias of</p>
+<p><span class="math display">\[
+-0.187.
+\]</span></p>
+<p>The .632+ estimator corrected much of this optimistic bias while retaining relatively low variability. Its average estimate was 0.432 with an SD of 0.080.</p>
+<p>Most importantly, .632+ produced the smallest overall RMS error:</p>
+<p><span class="math display">\[
+\mathrm{RMS}_{.632+}=0.105,
+\]</span></p>
+<p>compared with 0.109 for the leave-one-out bootstrap, 0.145 for LOOCV, and 0.199 for the original .632 estimator.</p>
+<p>Thus, in this simulation, .632+ did not achieve the smallest bias or the smallest variability individually. Instead, it achieved the best overall <strong>bias–variance compromise</strong>, which is the central argument of Efron and Tibshirani.</p>
+</section>
+<section id="phase-5-visualize-the-distributions-of-prediction-error-estimates" class="level4" data-number="2.1.10.5">
+<h4 data-number="2.1.10.5" class="anchored" data-anchor-id="phase-5-visualize-the-distributions-of-prediction-error-estimates"><span class="header-section-number">2.1.10.5</span> Phase 5: Visualize the distributions of prediction-error estimates</h4>
+<p>The repeated simulations can also be used to examine the complete distribution of each prediction-error estimator. The position of each distribution relative to the true error reflects bias, while its spread reflects variability.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="02-632-plus-bootstrap_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The figure makes the bias–variance trade-off visible across the four estimators. LOOCV is centered close to the true prediction error but has the widest distribution, reflecting relatively high variability. The bootstrap estimate remains close to the truth while showing a narrower distribution. In contrast, the original .632 estimator is tightly concentrated but shifted substantially below 0.50, demonstrating strong optimistic bias. The .632+ estimator corrects much of this bias while retaining relatively low variability, with many estimates concentrated near the no-information error level.</p>
+</section>
+<section id="phase-6-compare-the-simulation-with-experiment-8" class="level4" data-number="2.1.10.6">
+<h4 data-number="2.1.10.6" class="anchored" data-anchor-id="phase-6-compare-the-simulation-with-experiment-8"><span class="header-section-number">2.1.10.6</span> Phase 6: Compare the simulation with Experiment 8</h4>
+<p>Because this simulation was designed as a simplified reproduction of Experiment 8, the final results can be compared with those reported by Efron and Tibshirani.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Estimator</th>
+<th style="text-align: right;">Our Exp</th>
+<th style="text-align: right;">Paper Exp</th>
+<th style="text-align: right;">Our SD</th>
+<th style="text-align: right;">Paper SD</th>
+<th style="text-align: right;">Our RMS</th>
+<th style="text-align: right;">Paper RMS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LOOCV</td>
+<td style="text-align: right;">0.494</td>
+<td style="text-align: right;">0.513</td>
+<td style="text-align: right;">0.145</td>
+<td style="text-align: right;">0.136</td>
+<td style="text-align: right;">0.145</td>
+<td style="text-align: right;">0.136</td>
+</tr>
+<tr class="even">
+<td>Bootstrap</td>
+<td style="text-align: right;">0.496</td>
+<td style="text-align: right;">0.507</td>
+<td style="text-align: right;">0.109</td>
+<td style="text-align: right;">0.097</td>
+<td style="text-align: right;">0.109</td>
+<td style="text-align: right;">0.097</td>
+</tr>
+<tr class="odd">
+<td>.632</td>
+<td style="text-align: right;">0.313</td>
+<td style="text-align: right;">0.320</td>
+<td style="text-align: right;">0.069</td>
+<td style="text-align: right;">0.062</td>
+<td style="text-align: right;">0.199</td>
+<td style="text-align: right;">0.190</td>
+</tr>
+<tr class="even">
+<td>.632+</td>
+<td style="text-align: right;">0.432</td>
+<td style="text-align: right;">0.439</td>
+<td style="text-align: right;">0.080</td>
+<td style="text-align: right;">0.068</td>
+<td style="text-align: right;">0.105</td>
+<td style="text-align: right;">0.092</td>
+</tr>
+</tbody>
+</table>
+<p>The results closely reproduce the pattern reported in Experiment 8. LOOCV was nearly unbiased but relatively variable, while the leave-one-out bootstrap reduced variability. The original .632 estimator had low variability but substantial optimistic bias. The .632+ estimator corrected much of this bias while maintaining relatively low variability, producing the smallest RMS error among the four estimators in both the original experiment and the present simulation.</p>
+</section>
+</section>
+<section id="conclusions" class="level3" data-number="2.1.11">
+<h3 data-number="2.1.11" class="anchored" data-anchor-id="conclusions"><span class="header-section-number">2.1.11</span> Conclusions</h3>
+<p>The computational exploration reproduced the central pattern of Efron and Tibshirani’s no-information 1-NN experiment.</p>
+<p>The simulation showed that low bias alone does not necessarily produce the best prediction-error estimator. LOOCV was nearly unbiased but highly variable, while the original .632 estimator was stable but strongly biased downward.</p>
+<p>The .632+ estimator provided a better compromise between these two sources of error. Although it was neither the least biased nor the least variable estimator individually, it achieved the lowest overall RMS error in the simulation.</p>
+<p>The results therefore illustrate the main motivation for .632+: adapting the bootstrap weight according to the degree of overfitting can improve overall prediction-error estimation when the apparent training error is severely optimistic.</p>
 
 
 </section>
