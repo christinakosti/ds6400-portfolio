@@ -1,5 +1,9 @@
 ---
 title: "The .632+ Bootstrap Method"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
 ---
 
 ## Efron & Tibshirani (1997)
@@ -35,7 +39,7 @@ $$
 
 Each bootstrap sample also contains five draws, but all five draws come from the original observations.
 
-```{r, echo=FALSE}
+```{r}
 set.seed(632) # Makes the bootstrap samples reproducible
 
 original <- 1:5 # Original dataset
@@ -1051,7 +1055,7 @@ $$
 As overfitting becomes more severe, $R$ approaches 1 and $w$ approaches 1. The .632+ estimator therefore places progressively less weight on the overly optimistic apparent training error.
 
 
-```{r, include=FALSE}
+```{r}
 predict_1nn <- function(train_x, train_y, test_x) {
   # Creates a function for making predictions with 1-nearest-neighbor.
   # train_x = predictor values for the training observations.
@@ -1317,8 +1321,9 @@ Before repeating the experiment 500 times, I first run the complete procedure on
 
 A fixed random seed is used so that this example can be reproduced exactly.
 
-```{r, echo=FALSE}
+```{r}
 set.seed(2026)
+# Ensures that the complete repeated simulation can be reproduced.
 
 one_simulation <- run_one_simulation()
 
@@ -1453,7 +1458,7 @@ Repeating the experiment creates a distribution of 500 estimates for each method
 
 A fixed random seed is again used so that the complete repeated simulation is reproducible.
 
-```{r, include=FALSE}
+```{r}
 set.seed(2026)
 # Ensures that the complete repeated simulation can be reproduced.
 
@@ -1493,7 +1498,7 @@ $$
 
 The 500 repeated simulations are now summarized to compare the performance of the four prediction-error estimators against the known true error of 0.50.
 
-```{r, echo=FALSE}
+```{r}
 true_error <- 0.50
 # Known population prediction error in the no-information problem.
 
@@ -1558,65 +1563,22 @@ knitr::kable(
 )
 ```
 
-The table allows the methods to be compared simultaneously in terms of their average estimate, systematic bias, variability, and overall estimation error.
+The table summarizes the average prediction-error estimate (Exp), bias, standard deviation (SD), and root mean squared error (RMS) for each estimator across the 500 simulated datasets.
 
-The repeated simulations reveal a clear bias–variance trade-off between the four estimators.
+The results show a clear bias–variance trade-off. LOOCV and the leave-one-out bootstrap estimator were both nearly unbiased, with average estimated errors of 0.494 and 0.496, respectively. However, the bootstrap estimator was less variable than LOOCV, with an SD of 0.109 compared with 0.145.
 
-LOOCV was nearly unbiased, with
+The original .632 estimator had the lowest variability (SD = 0.069), but this came at the cost of substantial optimistic bias: its average estimated error was only 0.313, corresponding to a bias of −0.187.
 
-$$
-\mathrm{Exp}=0.494
-$$
+The .632+ estimator corrected much of this downward bias while retaining relatively low variability. Its average estimated error was 0.432 with an SD of 0.080. Importantly, .632+ produced the smallest overall RMS error (0.105), compared with 0.109 for the leave-one-out bootstrap estimator, 0.145 for LOOCV, and 0.199 for the original .632 estimator.
 
-compared with the true error of 0.50. However, it also had the largest standard deviation,
+Thus, .632+ did not minimize bias or variability individually. Instead, it provided the best overall **bias–variance compromise**, consistent with the central argument of Efron and Tibshirani.
 
-$$
-\mathrm{SD}=0.145,
-$$
-
-showing that its estimates varied considerably across training samples.
-
-The leave-one-out bootstrap estimate was also nearly unbiased,
-
-$$
-\mathrm{Exp}=0.496,
-$$
-
-but had substantially lower variability than LOOCV, with
-
-$$
-\mathrm{SD}=0.109.
-$$
-
-The original .632 estimator had the smallest SD at 0.069, but this stability came at the cost of substantial downward bias. Its average estimated error was only
-
-$$
-\mathrm{Exp}=0.313,
-$$
-
-giving a bias of
-
-$$
--0.187.
-$$
-
-The .632+ estimator corrected much of this optimistic bias while retaining relatively low variability. Its average estimate was 0.432 with an SD of 0.080.
-
-Most importantly, .632+ produced the smallest overall RMS error:
-
-$$
-\mathrm{RMS}_{.632+}=0.105,
-$$
-
-compared with 0.109 for the leave-one-out bootstrap, 0.145 for LOOCV, and 0.199 for the original .632 estimator.
-
-Thus, in this simulation, .632+ did not achieve the smallest bias or the smallest variability individually. Instead, it achieved the best overall **bias–variance compromise**, which is the central argument of Efron and Tibshirani.
 
 #### Phase 5: Visualize the distributions of prediction-error estimates
 
 The repeated simulations can also be used to examine the complete distribution of each prediction-error estimator. The position of each distribution relative to the true error reflects bias, while its spread reflects variability.
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE}
 library(ggplot2)
 
 plot_data <- stack(
@@ -1680,20 +1642,89 @@ ggplot(
   theme_minimal()
 ```
 
-The figure makes the bias–variance trade-off visible across the four estimators. LOOCV is centered close to the true prediction error but has the widest distribution, reflecting relatively high variability. The bootstrap estimate remains close to the truth while showing a narrower distribution. In contrast, the original .632 estimator is tightly concentrated but shifted substantially below 0.50, demonstrating strong optimistic bias. The .632+ estimator corrects much of this bias while retaining relatively low variability, with many estimates concentrated near the no-information error level.
+The figure makes the bias–variance trade-off across the four estimators immediately visible. LOOCV is centered close to the true prediction error of 0.50, but its distribution is the widest, indicating relatively high variability across simulated datasets. The leave-one-out bootstrap estimator is also centered close to the true error, but its distribution is noticeably narrower than that of LOOCV.
+
+In contrast, the original .632 estimator has the narrowest distribution but is shifted substantially to the left of the true error, illustrating its strong optimistic bias. The .632+ estimator moves the distribution much closer to the true error while still retaining a relatively narrow spread.
+
+Taken together, the figure shows why .632+ achieves a stronger overall bias–variance compromise: it sacrifices some of the low variability of the original .632 estimator in exchange for a substantial reduction in optimistic bias.
 
 #### Phase 6: Compare the simulation with Experiment 8
 
 Because this simulation was designed as a simplified reproduction of Experiment 8, the final results can be compared with those reported by Efron and Tibshirani.
 
-| Estimator | Our Exp | Paper Exp | Our SD | Paper SD | Our RMS | Paper RMS |
-|---|---:|---:|---:|---:|---:|---:|
-| LOOCV | 0.494 | 0.513 | 0.145 | 0.136 | 0.145 | 0.136 |
-| Bootstrap | 0.496 | 0.507 | 0.109 | 0.097 | 0.109 | 0.097 |
-| .632 | 0.313 | 0.320 | 0.069 | 0.062 | 0.199 | 0.190 |
-| .632+ | 0.432 | 0.439 | 0.080 | 0.068 | 0.105 | 0.092 |
+```{r, warning=FALSE, message=FALSE}
+comparison_data <- data.frame(
+  Estimator = rep(
+    c("LOOCV", "Bootstrap", ".632", ".632+"),
+    6
+  ),
+  Source = rep(
+    c("Our simulation", "Paper"),
+    each = 4,
+    times = 3
+  ),
+  Metric = rep(
+    c("Exp", "SD", "RMS"),
+    each = 8
+  ),
+  Value = c(
+    0.494, 0.496, 0.313, 0.432,
+    0.513, 0.507, 0.320, 0.439,
 
-The results closely reproduce the pattern reported in Experiment 8. LOOCV was nearly unbiased but relatively variable, while the leave-one-out bootstrap reduced variability. The original .632 estimator had low variability but substantial optimistic bias. The .632+ estimator corrected much of this bias while maintaining relatively low variability, producing the smallest RMS error among the four estimators in both the original experiment and the present simulation.
+    0.145, 0.109, 0.069, 0.080,
+    0.136, 0.097, 0.062, 0.068,
+
+    0.145, 0.109, 0.199, 0.105,
+    0.136, 0.097, 0.190, 0.092
+  )
+)
+
+comparison_data$Estimator <- factor(
+  comparison_data$Estimator,
+  levels = c("LOOCV", "Bootstrap", ".632", ".632+")
+)
+
+comparison_data$Metric <- factor(
+  comparison_data$Metric,
+  levels = c("Exp", "SD", "RMS")
+)
+
+ggplot(
+  comparison_data,
+  aes(
+    x = Estimator,
+    y = Value,
+    fill = Source
+  )
+) +
+  geom_col(
+    position = "dodge",
+    width = 0.7
+  ) +
+  facet_wrap(
+    ~ Metric,
+    scales = "free_y",
+    nrow = 1
+  ) +
+  labs(
+    x = "Prediction-error estimator",
+    y = "Value",
+    title = "Our simulation closely reproduces Experiment 8",
+    subtitle = "Comparison of expectation, standard deviation, and RMS error",
+    fill = "Source"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major.x = element_blank()
+  )
+```
+
+The figure shows that the present simulation reproduces the main pattern reported in Experiment 8. Across the four estimators, the expectation, standard deviation, and RMS error from our simulation are close to the corresponding values reported by Efron and Tibshirani.
+
+In both analyses, LOOCV is approximately unbiased but relatively variable, while the leave-one-out bootstrap estimator reduces variability. The original .632 estimator has the lowest variability but substantially underestimates the true prediction error. In contrast, the .632+ estimator corrects much of this optimistic bias while maintaining relatively low variability.
+
+Most importantly, .632+ has the lowest RMS error in both the original experiment and the present simulation. This supports the same overall conclusion as Efron and Tibshirani: the advantage of .632+ comes from achieving a better balance between bias and variability rather than minimizing either one individually.
 
 ### Conclusions
 
