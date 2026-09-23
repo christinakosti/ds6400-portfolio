@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>3&nbsp; Partial Dependence Plots – ds6400-portfolio</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./02-632-plus-bootstrap.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-631496449bf32ff9b0bb69a6bfd9195d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./03-pdp-visualizing-the-model.html"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">ds6400-portfolio</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-cross-validation-selection-bias.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Cross-Validation Selection Bias</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-632-plus-bootstrap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">The .632+ Bootstrap Method</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-pdp-visualizing-the-model.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#what-is-a-partial-dependence-plot" id="toc-what-is-a-partial-dependence-plot" class="nav-link active" data-scroll-target="#what-is-a-partial-dependence-plot"><span class="header-section-number">3.1</span> What is a partial dependence plot?</a></li>
+  <li><a href="#motivation" id="toc-motivation" class="nav-link" data-scroll-target="#motivation"><span class="header-section-number">3.2</span> Motivation</a></li>
+  <li><a href="#how-partial-dependence-works" id="toc-how-partial-dependence-works" class="nav-link" data-scroll-target="#how-partial-dependence-works"><span class="header-section-number">3.3</span> How partial dependence works</a>
+  <ul class="collapse">
+  <li><a href="#population-partial-dependence-function" id="toc-population-partial-dependence-function" class="nav-link" data-scroll-target="#population-partial-dependence-function"><span class="header-section-number">3.3.1</span> Population partial dependence function</a></li>
+  <li><a href="#estimating-partial-dependence-from-the-data" id="toc-estimating-partial-dependence-from-the-data" class="nav-link" data-scroll-target="#estimating-partial-dependence-from-the-data"><span class="header-section-number">3.3.2</span> Estimating partial dependence from the data</a></li>
+  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example"><span class="header-section-number">3.3.3</span> Example</a></li>
+  </ul></li>
+  <li><a href="#important-limitations" id="toc-important-limitations" class="nav-link" data-scroll-target="#important-limitations"><span class="header-section-number">3.4</span> Important limitations</a>
+  <ul class="collapse">
+  <li><a href="#averaging-can-hide-individual-differences" id="toc-averaging-can-hide-individual-differences" class="nav-link" data-scroll-target="#averaging-can-hide-individual-differences"><span class="header-section-number">3.4.1</span> Averaging can hide individual differences</a></li>
+  <li><a href="#correlated-predictors-can-create-unrealistic-combinations" id="toc-correlated-predictors-can-create-unrealistic-combinations" class="nav-link" data-scroll-target="#correlated-predictors-can-create-unrealistic-combinations"><span class="header-section-number">3.4.2</span> Correlated predictors can create unrealistic combinations</a></li>
+  </ul></li>
+  <li><a href="#computational-exploration" id="toc-computational-exploration" class="nav-link" data-scroll-target="#computational-exploration"><span class="header-section-number">3.5</span> Computational exploration</a>
+  <ul class="collapse">
+  <li><a href="#data-generating-process" id="toc-data-generating-process" class="nav-link" data-scroll-target="#data-generating-process"><span class="header-section-number">3.5.1</span> Data-generating process</a></li>
+  </ul></li>
+  <li><a href="#fitting-the-prediction-models" id="toc-fitting-the-prediction-models" class="nav-link" data-scroll-target="#fitting-the-prediction-models"><span class="header-section-number">3.6</span> Fitting the prediction models</a>
+  <ul class="collapse">
+  <li><a href="#random-forest" id="toc-random-forest" class="nav-link" data-scroll-target="#random-forest"><span class="header-section-number">3.6.1</span> Random forest</a></li>
+  <li><a href="#linear-regression-with-splines" id="toc-linear-regression-with-splines" class="nav-link" data-scroll-target="#linear-regression-with-splines"><span class="header-section-number">3.6.2</span> Linear regression with splines</a></li>
+  </ul></li>
+  <li><a href="#partial-dependence-plots" id="toc-partial-dependence-plots" class="nav-link" data-scroll-target="#partial-dependence-plots"><span class="header-section-number">3.7</span> Partial dependence plots</a>
+  <ul class="collapse">
+  <li><a href="#random-forest-pdp-for-x_1" id="toc-random-forest-pdp-for-x_1" class="nav-link" data-scroll-target="#random-forest-pdp-for-x_1"><span class="header-section-number">3.7.1</span> Random forest PDP for <span class="math inline">\(X_1\)</span></a></li>
+  <li><a href="#random-forest-pdp-for-x_2" id="toc-random-forest-pdp-for-x_2" class="nav-link" data-scroll-target="#random-forest-pdp-for-x_2"><span class="header-section-number">3.7.2</span> Random forest PDP for <span class="math inline">\(X_2\)</span></a></li>
+  <li><a href="#spline-regression-pdp-for-x_1" id="toc-spline-regression-pdp-for-x_1" class="nav-link" data-scroll-target="#spline-regression-pdp-for-x_1"><span class="header-section-number">3.7.3</span> Spline regression PDP for <span class="math inline">\(X_1\)</span></a></li>
+  <li><a href="#spline-regression-pdp-for-x_2" id="toc-spline-regression-pdp-for-x_2" class="nav-link" data-scroll-target="#spline-regression-pdp-for-x_2"><span class="header-section-number">3.7.4</span> Spline regression PDP for <span class="math inline">\(X_2\)</span></a></li>
+  <li><a href="#comparing-the-fitted-models" id="toc-comparing-the-fitted-models" class="nav-link" data-scroll-target="#comparing-the-fitted-models"><span class="header-section-number">3.7.5</span> Comparing the fitted models</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">3.8</span> References</a></li>
+  <li><a href="#ai-use-acknowledgement" id="toc-ai-use-acknowledgement" class="nav-link" data-scroll-target="#ai-use-acknowledgement"><span class="header-section-number">3.9</span> AI use acknowledgement</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="what-is-a-partial-dependence-plot" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="what-is-a-partial-dependence-plot"><span class="header-section-number">3.1</span> What is a partial dependence plot?</h2>
+<div class="callout callout-style-default callout-note callout-titled" title="Definition">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Definition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A <strong>partial dependence plot (PDP)</strong> is a model-interpretation tool that visualizes how predictions from a fitted model depend on one predictor, or a small subset of predictors, after averaging over the values of the remaining predictors.</p>
+</div>
+</div>
+<p>The partial dependence function is defined by Hastie, Tibshirani, and Friedman (2009) as the marginal average of the fitted prediction function over the predictors that are not being examined. In practice, this allows a complex fitted model to be summarized by showing how its predictions change across values of a selected predictor.</p>
+</section>
+<section id="motivation" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="motivation"><span class="header-section-number">3.2</span> Motivation</h2>
+<p>Once a prediction model has identified which predictors are important, the next challenge is understanding how the model’s predictions depend on those predictors.</p>
+<p>For models with only one or two predictors, the fitted relationship can often be visualized directly. However, when a model contains many predictors, its prediction function becomes high-dimensional and difficult to display or interpret.</p>
+<p>Partial dependence provides a lower-dimensional summary of this complex prediction function. Instead of trying to visualize the model as a function of all predictors simultaneously, it focuses on one predictor, or a small subset of predictors, and shows how the model’s predictions change across their values while averaging over the remaining predictors.</p>
+<p>This is especially useful for flexible or “black-box” prediction models, where the fitted relationship may be nonlinear or difficult to summarize using a single regression coefficient.</p>
+</section>
+<section id="how-partial-dependence-works" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="how-partial-dependence-works"><span class="header-section-number">3.3</span> How partial dependence works</h2>
+<p>Suppose a fitted prediction model uses several predictors. To examine the partial dependence of the model on one predictor, the predictors can be separated into two groups:</p>
+<ul>
+<li><span class="math inline">\(X_S\)</span>: predictor(s) of interest<br>
+</li>
+<li><span class="math inline">\(X_C\)</span>: the complementary set of all remaining predictors</li>
+</ul>
+<p>The fitted prediction function can therefore be written as</p>
+<p><span class="math display">\[
+f(X) = f(X_S, X_C).
+\]</span></p>
+<p>Partial dependence asks what the model predicts across different values of <span class="math inline">\(X_S\)</span> after averaging over the distribution of the remaining predictors, <span class="math inline">\(X_C\)</span>.</p>
+<section id="population-partial-dependence-function" class="level3" data-number="3.3.1">
+<h3 data-number="3.3.1" class="anchored" data-anchor-id="population-partial-dependence-function"><span class="header-section-number">3.3.1</span> Population partial dependence function</h3>
+<p>Hastie, Tibshirani, and Friedman (2009) define the partial dependence of the fitted function on <span class="math inline">\(X_S\)</span> as</p>
+<p><span class="math display">\[
+f_S(x_S)
+=
+E_{X_C}
+\left[
+f(x_S, X_C)
+\right].
+\]</span></p>
+<p>The expectation <span class="math inline">\(E_{X_C}\)</span> means that the model’s predictions are averaged over the distribution of the remaining predictors, <span class="math inline">\(X_C\)</span>. The result is a lower-dimensional function describing how the model’s predictions depend on <span class="math inline">\(X_S\)</span>.</p>
+</section>
+<section id="estimating-partial-dependence-from-the-data" class="level3" data-number="3.3.2">
+<h3 data-number="3.3.2" class="anchored" data-anchor-id="estimating-partial-dependence-from-the-data"><span class="header-section-number">3.3.2</span> Estimating partial dependence from the data</h3>
+<p>In practice, the population distribution of the remaining predictors is unknown. Partial dependence is therefore estimated using the observed predictor values in the available dataset.</p>
+<p>For a selected value of <span class="math inline">\(x_S\)</span>, the estimated partial dependence is</p>
+<p><span class="math display">\[
+\hat{f}_S(x_S)
+=
+\frac{1}{N}
+\sum_{i=1}^{N}
+\hat{f}(x_S, x_{iC}).
+\]</span></p>
+<p>where <span class="math inline">\(N\)</span> is the number of observations, <span class="math inline">\(x_S\)</span> is the selected value of the predictor(s) of interest, and <span class="math inline">\(x_{iC}\)</span> denotes the observed values of the remaining predictors for observation <span class="math inline">\(i\)</span>.</p>
+</section>
+<section id="example" class="level3" data-number="3.3.3">
+<h3 data-number="3.3.3" class="anchored" data-anchor-id="example"><span class="header-section-number">3.3.3</span> Example</h3>
+<p>Suppose a fitted model predicts <strong>knee-extension strength</strong> using lower-limb lean soft tissue, age, BMI, and physical activity.</p>
+<p>We want to understand how the model’s predictions depend on <strong>lower-limb lean soft tissue</strong>.</p>
+<p>Consider three participants:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Participant</th>
+<th style="text-align: right;">Actual lean soft tissue</th>
+<th style="text-align: right;">Age</th>
+<th style="text-align: right;">BMI</th>
+<th>Physical activity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td style="text-align: right;">18 kg</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">22</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td style="text-align: right;">24 kg</td>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">30</td>
+<td>Low</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td style="text-align: right;">30 kg</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">25</td>
+<td>Moderate</td>
+</tr>
+</tbody>
+</table>
+<p>To estimate partial dependence at</p>
+<p><span class="math display">\[
+x_S = 20 \text{ kg},
+\]</span></p>
+<p>we temporarily set lean soft tissue to 20 kg for every participant while leaving all other predictor values unchanged:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Participant</th>
+<th style="text-align: right;">Lean soft tissue used for prediction</th>
+<th style="text-align: right;">Age</th>
+<th style="text-align: right;">BMI</th>
+<th>Physical activity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td style="text-align: right;"><strong>20 kg</strong></td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">22</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td style="text-align: right;"><strong>20 kg</strong></td>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">30</td>
+<td>Low</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td style="text-align: right;"><strong>20 kg</strong></td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">25</td>
+<td>Moderate</td>
+</tr>
+</tbody>
+</table>
+<p>The fitted model is then used to predict knee-extension strength for each participant.</p>
+<p>Suppose the predictions are:</p>
+<p><span class="math display">\[
+120,\quad 160,\quad 140 \text{ Nm}.
+\]</span></p>
+<p>The average prediction is therefore</p>
+<p><span class="math display">\[
+\frac{120 + 160 + 140}{3}
+=
+140 \text{ Nm}.
+\]</span></p>
+<p>This gives one point on the partial dependence curve:</p>
+<p><span class="math display">\[
+(20,\;140).
+\]</span></p>
+<p>Repeating this procedure across the range of lean soft tissue values produces a series of average predictions that can be plotted as the partial dependence curve.</p>
+<p>In practical terms, the calculation follows the same procedure at every value of the predictor of interest:</p>
+<div class="callout callout-style-default callout-tip callout-titled" title="Partial Dependence Algorithm">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Partial Dependence Algorithm
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For a predictor of interest <span class="math inline">\(X_S\)</span>:</p>
+<ol type="1">
+<li><p>Choose a sequence of values across the observed range of <span class="math inline">\(X_S\)</span>.</p></li>
+<li><p>Select one value, <span class="math inline">\(x_S\)</span>, and set the predictor to this value for every observation in the dataset.</p></li>
+<li><p>Keep all remaining predictors, <span class="math inline">\(X_C\)</span>, at their original observed values.</p></li>
+<li><p>Use the fitted model to generate a prediction for every observation.</p></li>
+<li><p>Average those predictions to obtain the partial dependence estimate at <span class="math inline">\(x_S\)</span>.</p></li>
+<li><p>Repeat the procedure for every selected value of <span class="math inline">\(X_S\)</span>.</p></li>
+<li><p>Plot the values of <span class="math inline">\(X_S\)</span> on the x-axis and the corresponding average predictions on the y-axis.</p></li>
+</ol>
+<p><strong>Set → Predict → Average → Repeat</strong></p>
+</div>
+</div>
+</section>
+</section>
+<section id="important-limitations" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="important-limitations"><span class="header-section-number">3.4</span> Important limitations</h2>
+<p>Although partial dependence plots are useful for summarizing how a fitted model behaves, they should be interpreted carefully.</p>
+<section id="averaging-can-hide-individual-differences" class="level3" data-number="3.4.1">
+<h3 data-number="3.4.1" class="anchored" data-anchor-id="averaging-can-hide-individual-differences"><span class="header-section-number">3.4.1</span> Averaging can hide individual differences</h3>
+<p>A PDP averages predictions across all observations. As a result, different patterns among individuals can be hidden by the average curve.</p>
+<p>For example, the model may predict that increasing a predictor is associated with a strong increase in the outcome for some observations but little or no increase for others. The PDP may average these different patterns into a single moderate-looking relationship.</p>
+<p>Individual conditional expectation (ICE) plots can help reveal this heterogeneity because they display a separate prediction curve for each observation rather than only the average curve. In fact, the PDP can be viewed as the average of the individual ICE curves.</p>
+</section>
+<section id="correlated-predictors-can-create-unrealistic-combinations" class="level3" data-number="3.4.2">
+<h3 data-number="3.4.2" class="anchored" data-anchor-id="correlated-predictors-can-create-unrealistic-combinations"><span class="header-section-number">3.4.2</span> Correlated predictors can create unrealistic combinations</h3>
+<p>Partial dependence changes the predictor of interest while keeping the remaining predictors at their observed values. If predictors are strongly correlated, this can create combinations of predictor values that are unlikely or impossible in the real data.</p>
+<p>For example, body weight and BMI are strongly related. Changing BMI while holding body weight fixed may generate unrealistic combinations of values.</p>
+<p>For this reason, PDPs are most straightforward to interpret when the predictor of interest is not strongly dependent on the remaining predictors. Alternative approaches, such as accumulated local effect (ALE) plots, are designed to better handle correlated predictors.</p>
+</section>
+</section>
+<section id="computational-exploration" class="level2" data-number="3.5">
+<h2 data-number="3.5" class="anchored" data-anchor-id="computational-exploration"><span class="header-section-number">3.5</span> Computational exploration</h2>
+<p>I will now demonstrate how partial dependence plots can be used to interpret two different prediction models: a random forest and a linear regression model with splines. Both models will be fitted to the same simulated dataset so that their learned relationships can be compared.</p>
+<section id="data-generating-process" class="level3" data-number="3.5.1">
+<h3 data-number="3.5.1" class="anchored" data-anchor-id="data-generating-process"><span class="header-section-number">3.5.1</span> Data-generating process</h3>
+<p>The data are generated from the following model:</p>
+<p><span class="math display">\[
+E[Y \mid X]
+=
+\sqrt{5}\,\operatorname{sigmoid}(X_1 + X_3)
++
+\sqrt{5}\,\operatorname{sigmoid}(X_2)X_3,
+\]</span></p>
+<p>with</p>
+<p><span class="math display">\[
+V[Y \mid X] = 1,
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+X_1, X_2 \sim N(0,1),
+\]</span></p>
+<p><span class="math display">\[
+X_3 \sim \operatorname{Bernoulli}(0.4),
+\]</span></p>
+<p>and</p>
+<p><span class="math display">\[
+\operatorname{sigmoid}(x)
+=
+\frac{1}{1+e^{-x}}.
+\]</span></p>
+<p>We generate the data one component at a time below.</p>
+<section id="step-1-set-the-random-seed-and-sample-size" class="level4" data-number="3.5.1.1">
+<h4 data-number="3.5.1.1" class="anchored" data-anchor-id="step-1-set-the-random-seed-and-sample-size"><span class="header-section-number">3.5.1.1</span> Step 1: Set the random seed and sample size</h4>
+<p>A random seed is set so that the same simulated dataset is produced each time the chapter is rendered. We use a sample size of 1,000 observations for the demonstration.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-2-generate-the-predictors" class="level4" data-number="3.5.1.2">
+<h4 data-number="3.5.1.2" class="anchored" data-anchor-id="step-2-generate-the-predictors"><span class="header-section-number">3.5.1.2</span> Step 2: Generate the predictors</h4>
+<p>The model contains three predictors. <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_2\)</span> are continuous variables generated from standard normal distributions. Therefore, both have a mean of 0 and a standard deviation of 1.</p>
+<p><span class="math inline">\(X_3\)</span> is binary and follows a Bernoulli distribution with probability 0.4. This means that approximately 40% of observations are expected to have <span class="math inline">\(X_3 = 1\)</span>, while approximately 60% have <span class="math inline">\(X_3 = 0\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>x2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">1</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>x3 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fl">0.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-3-define-the-sigmoid-function" class="level4" data-number="3.5.1.3">
+<h4 data-number="3.5.1.3" class="anchored" data-anchor-id="step-3-define-the-sigmoid-function"><span class="header-section-number">3.5.1.3</span> Step 3: Define the sigmoid function</h4>
+<p>The data-generating model uses the sigmoid function</p>
+<p><span class="math display">\[
+\operatorname{sigmoid}(x)
+=
+\frac{1}{1+e^{-x}}.
+\]</span></p>
+<p>The sigmoid transformation maps any input value to a value between 0 and 1 and produces an S-shaped nonlinear relationship.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sigmoid <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>x))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-4-calculate-the-expected-outcome" class="level4" data-number="3.5.1.4">
+<h4 data-number="3.5.1.4" class="anchored" data-anchor-id="step-4-calculate-the-expected-outcome"><span class="header-section-number">3.5.1.4</span> Step 4: Calculate the expected outcome</h4>
+<p>For every observation, we calculate the expected value of <span class="math inline">\(Y\)</span> using the data-generating equation:</p>
+<p><span class="math display">\[
+E[Y \mid X]
+=
+\sqrt{5}\,\operatorname{sigmoid}(X_1 + X_3)
++
+\sqrt{5}\,\operatorname{sigmoid}(X_2)X_3.
+\]</span></p>
+<p>We store this quantity as <code>mu</code>. It represents the true conditional mean of the outcome specified by the data-generating process before random noise is added.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="dv">5</span>) <span class="sc">*</span> <span class="fu">sigmoid</span>(x1 <span class="sc">+</span> x3) <span class="sc">+</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sqrt</span>(<span class="dv">5</span>) <span class="sc">*</span> <span class="fu">sigmoid</span>(x2) <span class="sc">*</span> x3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>An important feature of this model is that the contribution of <span class="math inline">\(X_2\)</span> depends on <span class="math inline">\(X_3\)</span>.</p>
+<p>When <span class="math inline">\(X_3 = 0\)</span>, the second term becomes zero:</p>
+<p><span class="math display">\[
+\sqrt{5}\,\operatorname{sigmoid}(X_2)(0) = 0.
+\]</span></p>
+<p>Therefore, <span class="math inline">\(X_2\)</span> does not contribute to the expected outcome when <span class="math inline">\(X_3 = 0\)</span>.</p>
+<p>When <span class="math inline">\(X_3 = 1\)</span>, the second term becomes</p>
+<p><span class="math display">\[
+\sqrt{5}\,\operatorname{sigmoid}(X_2),
+\]</span></p>
+<p>so <span class="math inline">\(X_2\)</span> does contribute to the expected outcome.</p>
+<p>Thus, the data-generating process contains an <strong>interaction between <span class="math inline">\(X_2\)</span> and <span class="math inline">\(X_3\)</span></strong>: the relationship between <span class="math inline">\(X_2\)</span> and the outcome depends on the value of <span class="math inline">\(X_3\)</span>.</p>
+<p><span class="math inline">\(X_3\)</span> also affects the relationship between <span class="math inline">\(X_1\)</span> and the outcome because it appears inside <span class="math inline">\(\operatorname{sigmoid}(X_1 + X_3)\)</span>. When <span class="math inline">\(X_3 = 1\)</span>, the sigmoid function is evaluated at <span class="math inline">\(X_1 + 1\)</span> rather than <span class="math inline">\(X_1\)</span>, shifting the relationship between <span class="math inline">\(X_1\)</span> and the expected outcome.</p>
+</section>
+<section id="step-5-generate-the-observed-outcome" class="level4" data-number="3.5.1.5">
+<h4 data-number="3.5.1.5" class="anchored" data-anchor-id="step-5-generate-the-observed-outcome"><span class="header-section-number">3.5.1.5</span> Step 5: Generate the observed outcome</h4>
+<p>The assignment specifies</p>
+<p><span class="math display">\[
+V[Y \mid X] = 1.
+\]</span></p>
+<p>To generate observed outcome values, we add random error with mean 0 and variance 1 to the conditional mean. For this demonstration, we use normally distributed error:</p>
+<p><span class="math display">\[
+Y = E[Y \mid X] + \varepsilon,
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+\varepsilon \sim N(0,1).
+\]</span></p>
+<p>This preserves the specified conditional variance of 1.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> mu <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-6-combine-the-variables-into-a-dataset" class="level4" data-number="3.5.1.6">
+<h4 data-number="3.5.1.6" class="anchored" data-anchor-id="step-6-combine-the-variables-into-a-dataset"><span class="header-section-number">3.5.1.6</span> Step 6: Combine the variables into a dataset</h4>
+<p>Finally, the outcome and predictors are combined into a single data frame that will be used to fit both prediction models.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> y,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">x1 =</span> x1,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">x2 =</span> x2,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">x3 =</span> x3</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>          y          x1          x2 x3
+1 0.1338631 -0.56047565 -0.99579872  0
+2 2.6865946 -0.23017749 -1.03995504  1
+3 1.1428531  1.55870831 -0.01798024  0
+4 2.1754546  0.07050839 -0.13217513  1
+5 1.9645921  0.12928774 -2.54934277  0
+6 1.4194285  1.71506499  1.04057346  0</code></pre>
+</div>
+</div>
+<p>The resulting dataset contains one outcome, <code>y</code>, and three predictors, <code>x1</code>, <code>x2</code>, and <code>x3</code>. Because the data were simulated, the underlying relationship between the predictors and the expected outcome is known. This allows us to evaluate how well the random forest and spline regression models recover that relationship and how effectively partial dependence plots summarize what each fitted model has learned.</p>
+</section>
+</section>
+</section>
+<section id="fitting-the-prediction-models" class="level2" data-number="3.6">
+<h2 data-number="3.6" class="anchored" data-anchor-id="fitting-the-prediction-models"><span class="header-section-number">3.6</span> Fitting the prediction models</h2>
+<p>We now fit two prediction models to the simulated data: a random forest and a linear regression model with splines.</p>
+<section id="random-forest" class="level3" data-number="3.6.1">
+<h3 data-number="3.6.1" class="anchored" data-anchor-id="random-forest"><span class="header-section-number">3.6.1</span> Random forest</h3>
+<p>A random forest is an ensemble learning method that combines predictions from many decision trees. Each tree is fitted using a different bootstrap sample of the data and considers a random subset of predictors when making splits.</p>
+<p>For a regression problem, each tree produces a predicted value of the outcome, and the random forest prediction is obtained by averaging the predictions across all trees.</p>
+<p>This flexibility allows a random forest to learn nonlinear relationships and interactions without requiring their exact form to be specified in advance.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(randomForest)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">ntree =</span> <span class="dv">500</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>rf_summary <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Metric =</span> <span class="fu">c</span>(</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Model type"</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Number of trees"</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Variables tried at each split"</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Out-of-bag mean squared error"</span>,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Variance explained"</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">c</span>(</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Regression"</span>,</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    rf_fit<span class="sc">$</span>ntree,</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    rf_fit<span class="sc">$</span>mtry,</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(rf_fit<span class="sc">$</span>mse[rf_fit<span class="sc">$</span>ntree], <span class="dv">3</span>),</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste0</span>(<span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> rf_fit<span class="sc">$</span>rsq[rf_fit<span class="sc">$</span>ntree], <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  rf_summary,</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Random forest model summary"</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Random forest model summary</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Metric</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Model type</td>
+<td style="text-align: left;">Regression</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of trees</td>
+<td style="text-align: left;">500</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Variables tried at each split</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Out-of-bag mean squared error</td>
+<td style="text-align: left;">1.048</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Variance explained</td>
+<td style="text-align: left;">38.1%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The model uses <code>y</code> as the outcome and <code>x1</code>, <code>x2</code>, and <code>x3</code> as predictors. A total of 500 regression trees are fitted, and their predictions are averaged to produce the final random forest prediction.</p>
+<p>Importantly, the random forest is not given the true data-generating equation. It must learn the nonlinear relationships and interactions from the simulated observations themselves.</p>
+<p>The model summary provides the out-of-bag prediction error and the proportion of variation explained.</p>
+</section>
+<section id="linear-regression-with-splines" class="level3" data-number="3.6.2">
+<h3 data-number="3.6.2" class="anchored" data-anchor-id="linear-regression-with-splines"><span class="header-section-number">3.6.2</span> Linear regression with splines</h3>
+<p>A simple linear regression specification would restrict the relationships between the predictors and the expected outcome to straight lines. However, the true data-generating process in this simulation contains nonlinear sigmoid relationships.</p>
+<p>Splines allow a regression model to represent smooth nonlinear relationships by expressing a predictor using several basis functions rather than forcing the relationship to follow a single straight line.</p>
+<p>Because the relationship between the predictors and the outcome also depends on <span class="math inline">\(X_3\)</span>, the spline model includes interactions with <span class="math inline">\(X_3\)</span> so that the shape of the relationship can differ according to whether <span class="math inline">\(X_3 = 0\)</span> or <span class="math inline">\(X_3 = 1\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(splines)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>spline_fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> <span class="fu">ns</span>(x1, <span class="at">df =</span> <span class="dv">4</span>) <span class="sc">*</span> x3 <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">ns</span>(x2, <span class="at">df =</span> <span class="dv">4</span>) <span class="sc">*</span> x3,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>spline_summary <span class="ot">&lt;-</span> <span class="fu">summary</span>(spline_fit)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>spline_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Metric =</span> <span class="fu">c</span>(</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Model type"</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Number of observations"</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Residual standard error"</span>,</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"R-squared"</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Adjusted R-squared"</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">c</span>(</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Linear regression with natural splines"</span>,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">nobs</span>(spline_fit),</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(spline_summary<span class="sc">$</span>sigma, <span class="dv">3</span>),</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(spline_summary<span class="sc">$</span>r.squared, <span class="dv">3</span>),</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(spline_summary<span class="sc">$</span>adj.r.squared, <span class="dv">3</span>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  spline_table,</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Spline regression model summary"</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Spline regression model summary</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Metric</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Model type</td>
+<td style="text-align: left;">Linear regression with natural splines</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of observations</td>
+<td style="text-align: left;">1000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Residual standard error</td>
+<td style="text-align: left;">0.999</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">R-squared</td>
+<td style="text-align: left;">0.422</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Adjusted R-squared</td>
+<td style="text-align: left;">0.412</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Four degrees of freedom are used here as a moderate-flexibility choice for representing the smooth nonlinear relationships in the simulated data.</p>
+<p>The terms <code>ns(x1, df = 4)</code> and <code>ns(x2, df = 4)</code> allow <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_2\)</span> to have smooth nonlinear relationships with the outcome rather than restricting them to straight-line effects.</p>
+<p>The interaction terms with <span class="math inline">\(X_3\)</span> allow those nonlinear relationships to differ depending on whether <span class="math inline">\(X_3 = 0\)</span> or <span class="math inline">\(X_3 = 1\)</span>. This is important because the true data-generating process was constructed so that the contribution of <span class="math inline">\(X_2\)</span>, and the relationship involving <span class="math inline">\(X_1\)</span>, depend on the value of <span class="math inline">\(X_3\)</span>.</p>
+<p>The two fitted models can now be interpreted using partial dependence plots.</p>
+</section>
+</section>
+<section id="partial-dependence-plots" class="level2" data-number="3.7">
+<h2 data-number="3.7" class="anchored" data-anchor-id="partial-dependence-plots"><span class="header-section-number">3.7</span> Partial dependence plots</h2>
+<p>Partial dependence plots are now constructed from the fitted models using the same <strong>set → predict → average → repeat</strong> procedure described earlier. We begin by examining the partial dependence of the random forest predictions on <span class="math inline">\(X_1\)</span>.</p>
+<section id="random-forest-pdp-for-x_1" class="level3" data-number="3.7.1">
+<h3 data-number="3.7.1" class="anchored" data-anchor-id="random-forest-pdp-for-x_1"><span class="header-section-number">3.7.1</span> Random forest PDP for <span class="math inline">\(X_1\)</span></h3>
+<p>First, we create a sequence of values spanning the observed range of <span class="math inline">\(X_1\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>x1_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">min</span>(dat<span class="sc">$</span>x1),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(dat<span class="sc">$</span>x1),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">length.out =</span> <span class="dv">100</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>For each value in this sequence, <span class="math inline">\(X_1\)</span> is temporarily set to that value for every observation in the dataset. The random forest then predicts the outcome for all observations, and those predictions are averaged.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>rf_pdp_x1 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(x1_grid, <span class="cf">function</span>(x1_value) {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  new_dat <span class="ot">&lt;-</span> dat</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  new_dat<span class="sc">$</span>x1 <span class="ot">&lt;-</span> x1_value</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    rf_fit,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">newdata =</span> new_dat</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(predictions)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>The resulting predictor values and average predictions are combined into a data frame for plotting.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rf_pdp_x1_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x1 =</span> x1_grid,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">partial_dependence =</span> rf_pdp_x1</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(rf_pdp_x1_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>         x1 partial_dependence
+1 -2.809775           1.162193
+2 -2.748655           1.162193
+3 -2.687536           1.205621
+4 -2.626417           1.158731
+5 -2.565297           1.146642
+6 -2.504178           1.159148</code></pre>
+</div>
+</div>
+<p>Finally, we plot the average random forest prediction against the values of <span class="math inline">\(X_1\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  rf_pdp_x1_df,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> x1, <span class="at">y =</span> partial_dependence)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">"Partial Dependence of X1: Random Forest"</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">expression</span>(X[<span class="dv">1</span>]),</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> <span class="st">"Average predicted Y"</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="fu">theme</span>(</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">13</span>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03-pdp-visualizing-the-model_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The partial dependence plot shows that the random forest predicts a generally increasing relationship between <span class="math inline">\(X_1\)</span> and the outcome. The relationship is nonlinear, with periods of relatively little change followed by steeper increases. This broadly reflects the nonlinear sigmoid relationship involving <span class="math inline">\(X_1\)</span> in the data-generating process.</p>
+</section>
+<section id="random-forest-pdp-for-x_2" class="level3" data-number="3.7.2">
+<h3 data-number="3.7.2" class="anchored" data-anchor-id="random-forest-pdp-for-x_2"><span class="header-section-number">3.7.2</span> Random forest PDP for <span class="math inline">\(X_2\)</span></h3>
+<p>The same procedure can be used to examine the partial dependence of the random forest predictions on <span class="math inline">\(X_2\)</span>.</p>
+<p>First, we create a sequence of values across the observed range of <span class="math inline">\(X_2\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>x2_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">min</span>(dat<span class="sc">$</span>x2),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(dat<span class="sc">$</span>x2),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">length.out =</span> <span class="dv">100</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>For each value, <span class="math inline">\(X_2\)</span> is temporarily set to that value for every observation while <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_3\)</span> remain at their observed values. Predictions are then generated and averaged.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>rf_pdp_x2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(x2_grid, <span class="cf">function</span>(x2_value) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  new_dat <span class="ot">&lt;-</span> dat</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  new_dat<span class="sc">$</span>x2 <span class="ot">&lt;-</span> x2_value</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    rf_fit,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">newdata =</span> new_dat</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(predictions)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>The resulting values are combined into a data frame.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>rf_pdp_x2_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x2 =</span> x2_grid,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">partial_dependence =</span> rf_pdp_x2</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(rf_pdp_x2_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>         x2 partial_dependence
+1 -3.047861           1.416871
+2 -2.982828           1.416871
+3 -2.917796           1.416871
+4 -2.852763           1.416871
+5 -2.787730           1.416871
+6 -2.722698           1.416871</code></pre>
+</div>
+</div>
+<p>Finally, the partial dependence values are plotted.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  rf_pdp_x2_df,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> x2, <span class="at">y =</span> partial_dependence)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Partial Dependence of X2: Random Forest"</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(X[<span class="dv">2</span>]),</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Average predicted Y"</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">13</span>)</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03-pdp-visualizing-the-model_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The partial dependence plot shows that the random forest predicts a generally increasing relationship between <span class="math inline">\(X_2\)</span> and the outcome. This is consistent with the data-generating process, in which <span class="math inline">\(X_2\)</span> contributes positively when <span class="math inline">\(X_3 = 1\)</span>.</p>
+<p>However, <span class="math inline">\(X_2\)</span> has no contribution when <span class="math inline">\(X_3 = 0\)</span>. Because the PDP averages predictions across all observations, the plotted relationship represents an average of these different patterns. This illustrates how partial dependence can summarize an overall effect while potentially masking interaction-driven heterogeneity.</p>
+</section>
+<section id="spline-regression-pdp-for-x_1" class="level3" data-number="3.7.3">
+<h3 data-number="3.7.3" class="anchored" data-anchor-id="spline-regression-pdp-for-x_1"><span class="header-section-number">3.7.3</span> Spline regression PDP for <span class="math inline">\(X_1\)</span></h3>
+<p>We now repeat the same partial dependence procedure using the fitted spline regression model.</p>
+<p>The same sequence of <span class="math inline">\(X_1\)</span> values used for the random forest is used here so that the two fitted models can later be compared over the same range.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>spline_pdp_x1 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(x1_grid, <span class="cf">function</span>(x1_value) {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  new_dat <span class="ot">&lt;-</span> dat</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  new_dat<span class="sc">$</span>x1 <span class="ot">&lt;-</span> x1_value</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    spline_fit,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">newdata =</span> new_dat</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(predictions)</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>The predictor values and corresponding average predictions are combined into a data frame.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>spline_pdp_x1_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x1 =</span> x1_grid,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">partial_dependence =</span> spline_pdp_x1</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(spline_pdp_x1_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>         x1 partial_dependence
+1 -2.809775          0.2053674
+2 -2.748655          0.2439686
+3 -2.687536          0.2825593
+4 -2.626417          0.3211289
+5 -2.565297          0.3596668
+6 -2.504178          0.3981625</code></pre>
+</div>
+</div>
+<p>The partial dependence curve is then plotted.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  spline_pdp_x1_df,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> x1, <span class="at">y =</span> partial_dependence)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Partial Dependence of X1: Spline Regression"</span>,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(X[<span class="dv">1</span>]),</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Average predicted Y"</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">13</span>)</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03-pdp-visualizing-the-model_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The spline regression PDP shows a smooth increasing relationship between <span class="math inline">\(X_1\)</span> and the average predicted outcome. This is broadly consistent with the nonlinear relationship involving <span class="math inline">\(X_1\)</span> in the data-generating process. Compared with the random forest PDP, the spline curve is considerably smoother because the spline model represents the relationship using smooth basis functions rather than decision-tree splits.</p>
+</section>
+<section id="spline-regression-pdp-for-x_2" class="level3" data-number="3.7.4">
+<h3 data-number="3.7.4" class="anchored" data-anchor-id="spline-regression-pdp-for-x_2"><span class="header-section-number">3.7.4</span> Spline regression PDP for <span class="math inline">\(X_2\)</span></h3>
+<p>The partial dependence of the spline regression model on <span class="math inline">\(X_2\)</span> is estimated using the same procedure.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>spline_pdp_x2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(x2_grid, <span class="cf">function</span>(x2_value) {</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  new_dat <span class="ot">&lt;-</span> dat</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  new_dat<span class="sc">$</span>x2 <span class="ot">&lt;-</span> x2_value</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    spline_fit,</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">newdata =</span> new_dat</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(predictions)</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>The results are combined into a data frame.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>spline_pdp_x2_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x2 =</span> x2_grid,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">partial_dependence =</span> spline_pdp_x2</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(spline_pdp_x2_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>         x2 partial_dependence
+1 -3.047861           1.304284
+2 -2.982828           1.302730
+3 -2.917796           1.301211
+4 -2.852763           1.299761
+5 -2.787730           1.298415
+6 -2.722698           1.297207</code></pre>
+</div>
+</div>
+<p>The partial dependence curve is then plotted.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  spline_pdp_x2_df,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> x2, <span class="at">y =</span> partial_dependence)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Partial Dependence of X2: Spline Regression"</span>,</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(X[<span class="dv">2</span>]),</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Average predicted Y"</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">13</span>)</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03-pdp-visualizing-the-model_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The spline regression PDP shows a smooth, nonlinear increase in the average predicted outcome as <span class="math inline">\(X_2\)</span> increases. This is consistent with the sigmoid relationship involving <span class="math inline">\(X_2\)</span> in the data-generating process.</p>
+<p>However, the contribution of <span class="math inline">\(X_2\)</span> depends on <span class="math inline">\(X_3\)</span>: <span class="math inline">\(X_2\)</span> contributes to the outcome when <span class="math inline">\(X_3 = 1\)</span> but not when <span class="math inline">\(X_3 = 0\)</span>. Because the PDP averages predictions across both groups, the curve represents the average relationship learned by the model and does not display this interaction separately.</p>
+</section>
+<section id="comparing-the-fitted-models" class="level3" data-number="3.7.5">
+<h3 data-number="3.7.5" class="anchored" data-anchor-id="comparing-the-fitted-models"><span class="header-section-number">3.7.5</span> Comparing the fitted models</h3>
+<p>Both models recover a generally increasing, nonlinear relationship between the predictors and the average predicted outcome. The random forest PDPs are more irregular because the model is constructed from decision-tree splits, whereas the spline regression produces smoother partial dependence curves by design.</p>
+<p>Despite these differences in shape, the two approaches identify similar overall patterns for both <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_2\)</span>. The <span class="math inline">\(X_2\)</span> results also demonstrate an important limitation of partial dependence: because the effect of <span class="math inline">\(X_2\)</span> depends on <span class="math inline">\(X_3\)</span>, averaging across all observations hides the different relationships present when <span class="math inline">\(X_3 = 0\)</span> and <span class="math inline">\(X_3 = 1\)</span>.</p>
+</section>
+</section>
+<section id="references" class="level2" data-number="3.8">
+<h2 data-number="3.8" class="anchored" data-anchor-id="references"><span class="header-section-number">3.8</span> References</h2>
+<p>Hastie, T., Tibshirani, R., &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning: Data Mining, Inference, and Prediction</em> (2nd ed.). Springer.</p>
+</section>
+<section id="ai-use-acknowledgement" class="level2" data-number="3.9">
+<h2 data-number="3.9" class="anchored" data-anchor-id="ai-use-acknowledgement"><span class="header-section-number">3.9</span> AI use acknowledgement</h2>
+<p>OpenAI ChatGPT (GPT-5.6 Sol) was used during the development of this tutorial to support conceptual understanding, assist with the structure and explanation of the partial dependence analysis, help develop and troubleshoot R/Quarto code, and provide feedback on clarity and wording. The final analysis, interpretation, code, and written content were reviewed and understood by the author.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./02-632-plus-bootstrap.html" class="pagination-link" aria-label="The .632+ Bootstrap Method">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">The .632+ Bootstrap Method</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -9,6 +9,7 @@ book:
     - index.qmd
     - 01-cross-validation-selection-bias.qmd
     - 02-632-plus-bootstrap.qmd
+    - 03-pdp-visualizing-the-model.qmd
 
 format:
   html:
