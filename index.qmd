@@ -1,5 +1,5 @@
 # Preface {.unnumbered}
 
-This book contains my notes, paper summaries, and computational explorations for DS 6400: Advanced Machine Learning I.
+This book serves as a portfolio of my work in **DS 6400: Advanced Machine Learning I**, bringing together course notes, paper summaries, mathematical explanations and computational explorations in R.
 
-The goal is to document key concepts from the course and develop reproducible examples and simulations in R.
+My goal is not only to understand how different machine learning methods work, but also to build clear and reproducible examples that connect theory with practical problems. Throughout the course, I aim to relate these methods whenever possible to my interests in exercise physiology, wearable technology, digital health and human-performance analytics.
