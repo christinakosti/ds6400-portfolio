@@ -627,6 +627,219 @@ ggplot(oob_error, aes(x = trees, y = oob_rmse)) +
 
 The OOB RMSE decreased rapidly as the first trees were added and then stabilized, indicating that 500 trees were more than sufficient for the forest to reach a stable level of predictive performance.
 
+### How well does OOB performance estimate true out-of-sample performance?
+
+Because the data-generating process is known, I can generate a new independent dataset from the same population and directly compare the Random Forest's OOB performance with its performance on observations that were never available during model fitting. I also include in-sample performance to illustrate the difference between evaluating a model on its training data and evaluating it on unseen data.
+
+```{r}
+# Function to generate a new dataset using the same simulation rules
+simulate_wearable_data <- function(seed, n_people = 1000, n_days = 14) {
+
+  set.seed(seed)
+
+  people_new <- tibble(
+    id = 1:n_people,
+    age = pmin(
+      pmax(rnorm(n_people, mean = 32, sd = 8), 18),
+      55
+    ),
+    training_years = pmin(
+      pmax(
+        (age - 18) * 0.35 +
+          rnorm(n_people, mean = 2.5, sd = 2.5),
+        0
+      ),
+      20
+    )
+  )
+
+  new_data <- expand_grid(
+    people_new,
+    day = 1:n_days
+  ) |>
+    mutate(
+      training_strain = pmin(
+        rgamma(n(), shape = 4, scale = 2.5),
+        20
+      ),
+
+      alcohol = if_else(
+        runif(n()) < 0.72,
+        0,
+        pmin(rpois(n(), lambda = 1.2) + 1, 5)
+      ),
+
+      sleep_hours = pmin(
+        pmax(
+          rnorm(
+            n(),
+            mean = 7.3 -
+              0.18 * alcohol -
+              0.015 * training_strain,
+            sd = 0.85
+          ),
+          4
+        ),
+        10
+      ),
+
+      sleep_efficiency = pmin(
+        pmax(
+          rnorm(
+            n(),
+            mean = 87 +
+              1.5 * (sleep_hours - 7.2) -
+              1.6 * alcohol,
+            sd = 4
+          ),
+          65
+        ),
+        99
+      ),
+
+      steps = pmin(
+        pmax(
+          rnorm(
+            n(),
+            mean = 7000 + 450 * training_strain,
+            sd = 2200
+          ),
+          1500
+        ),
+        25000
+      ),
+
+      hrv_dev = pmin(
+        pmax(
+          rnorm(
+            n(),
+            mean = 1.5 * (sleep_hours - 7.2) -
+              1.4 * alcohol -
+              0.22 * (training_strain - 10),
+            sd = 6
+          ),
+          -30
+        ),
+        30
+      ),
+
+      rhr_dev = pmin(
+        pmax(
+          rnorm(
+            n(),
+            mean = -0.8 * (sleep_hours - 7.2) +
+              1.6 * alcohol +
+              0.25 * (training_strain - 10),
+            sd = 2.5
+          ),
+          -10
+        ),
+        20
+      ),
+
+      performance_score =
+        65 +
+        10 * tanh((sleep_hours - 6.2) / 1.2) +
+        0.12 * (sleep_efficiency - 85) +
+        0.28 * hrv_dev -
+        0.55 * rhr_dev -
+        2.5 * alcohol -
+        0.10 * (training_strain - 10)^2 -
+        0.90 *
+          pmax(training_strain - 13, 0) *
+          pmax(7 - sleep_hours, 0) +
+        0.12 *
+          training_years *
+          pmax(training_strain - 13, 0) -
+        0.08 * (age - 32) +
+        rnorm(n(), mean = 0, sd = 5),
+
+      performance_score = pmin(
+        pmax(performance_score, 0),
+        100
+      )
+    )
+
+  new_data
+}
+
+# Generate a large independent test dataset
+test_data <- simulate_wearable_data(
+  seed = 2027,
+  n_people = 1000,
+  n_days = 14
+)
+
+test_rf_data <- test_data |>
+  select(
+    performance_score,
+    sleep_hours,
+    sleep_efficiency,
+    hrv_dev,
+    rhr_dev,
+    training_strain,
+    steps,
+    alcohol,
+    training_years,
+    age
+  )
+
+# Predictions on the original training data
+train_pred <- predict(
+  rf_model,
+  newdata = rf_data
+)
+
+# OOB predictions are stored by randomForest
+oob_pred <- rf_model$predicted
+
+# Predictions on completely new simulated observations
+test_pred <- predict(
+  rf_model,
+  newdata = test_rf_data
+)
+
+# Helper function for RMSE and R²
+performance_metrics <- function(observed, predicted) {
+
+  tibble(
+    RMSE = sqrt(mean((observed - predicted)^2)),
+    R2 = 1 -
+      sum((observed - predicted)^2) /
+      sum((observed - mean(observed))^2)
+  )
+}
+
+performance_comparison <- bind_rows(
+  performance_metrics(
+    rf_data$performance_score,
+    train_pred
+  ) |>
+    mutate(Evaluation = "In-sample"),
+
+  performance_metrics(
+    rf_data$performance_score,
+    oob_pred
+  ) |>
+    mutate(Evaluation = "Out-of-bag"),
+
+  performance_metrics(
+    test_rf_data$performance_score,
+    test_pred
+  ) |>
+    mutate(Evaluation = "Independent test data")
+) |>
+  select(Evaluation, RMSE, R2)
+
+knitr::kable(
+  performance_comparison,
+  digits = 2,
+  caption = "Comparison of in-sample, OOB, and independent out-of-sample performance"
+)
+```
+
+In-sample performance was substantially more optimistic (RMSE = 2.33, $R^2$ = 0.95). In contrast, OOB performance (RMSE = 5.40, $R^2$ = 0.71) closely matched performance on the independent test data (RMSE = 5.31, $R^2$ = 0.73), suggesting that OOB evaluation provided a good estimate of true out-of-sample performance in this simulation.
+
 ## Visualizing the prediction relationship
 
 Unlike a single decision tree, a Random Forest contains hundreds of different trees, so there is no single set of splits or coefficients that completely describes the fitted model. I therefore use several complementary visualizations to examine what the forest learned.
@@ -663,6 +876,132 @@ ggplot(
 ```
 
 Sleep duration was the most influential predictor in the fitted forest, followed by alcohol intake and resting heart rate deviation. In contrast, step count, age, and training experience contributed relatively little to the model's predictive accuracy.
+
+### Does the Random Forest recover the true variable importance?
+
+Because the outcome was generated from a known function, I can also compare the Random Forest's estimated permutation importance with an **oracle permutation importance** calculated directly from the true data-generating process.
+
+A variable does not have a single "true importance" coefficient when relationships are nonlinear, variables have different scales and interactions are present. To make the comparison consistent with the Random Forest, I therefore use the same permutation idea: I disrupt one predictor at a time and measure how much this worsens prediction when the true outcome-generating function is used instead of the fitted forest.
+
+```{r}
+# True conditional mean used to generate performance
+# This contains the known signal but excludes random day-to-day noise
+true_performance_mean <- function(dat) {
+
+  score <-
+    65 +
+    10 * tanh((dat$sleep_hours - 6.2) / 1.2) +
+    0.12 * (dat$sleep_efficiency - 85) +
+    0.28 * dat$hrv_dev -
+    0.55 * dat$rhr_dev -
+    2.5 * dat$alcohol -
+    0.10 * (dat$training_strain - 10)^2 -
+    0.90 *
+      pmax(dat$training_strain - 13, 0) *
+      pmax(7 - dat$sleep_hours, 0) +
+    0.12 *
+      dat$training_years *
+      pmax(dat$training_strain - 13, 0) -
+    0.08 * (dat$age - 32)
+
+  pmin(pmax(score, 0), 100)
+}
+
+predictor_names <- c(
+  "sleep_hours",
+  "sleep_efficiency",
+  "hrv_dev",
+  "rhr_dev",
+  "training_strain",
+  "steps",
+  "alcohol",
+  "training_years",
+  "age"
+)
+
+# Baseline error of the true data-generating function
+true_prediction <- true_performance_mean(test_data)
+
+true_baseline_mse <- mean(
+  (test_data$performance_score - true_prediction)^2
+)
+
+set.seed(2028)
+
+# Permute each predictor and calculate the increase in true MSE
+true_importance <- map_dfr(
+  predictor_names,
+  function(variable) {
+
+    permuted_data <- test_data
+
+    permuted_data[[variable]] <-
+      sample(permuted_data[[variable]])
+
+    permuted_prediction <-
+      true_performance_mean(permuted_data)
+
+    permuted_mse <- mean(
+      (test_data$performance_score -
+         permuted_prediction)^2
+    )
+
+    tibble(
+      predictor = variable,
+      true_importance =
+        permuted_mse - true_baseline_mse
+    )
+  }
+)
+
+# Combine true importance with Random Forest OOB importance
+importance_comparison <- importance_values |>
+  select(predictor, importance) |>
+  rename(rf_importance = importance) |>
+  left_join(
+    true_importance,
+    by = "predictor"
+  ) |>
+  mutate(
+    `Random Forest` =
+      100 * rf_importance / max(rf_importance),
+    `True data-generating process` =
+      100 * true_importance / max(true_importance)
+  ) |>
+  select(
+    predictor,
+    `Random Forest`,
+    `True data-generating process`
+  ) |>
+  pivot_longer(
+    cols = -predictor,
+    names_to = "source",
+    values_to = "relative_importance"
+  )
+
+ggplot(
+  importance_comparison,
+  aes(
+    x = reorder(predictor, relative_importance),
+    y = relative_importance,
+    fill = source
+  )
+) +
+  geom_col(
+    position = "dodge"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Estimated versus true variable importance",
+    subtitle = "Permutation importance scaled relative to the most important predictor",
+    x = NULL,
+    y = "Relative importance (maximum = 100)",
+    fill = NULL
+  ) +
+  theme_classic()
+```
+
+The Random Forest recovered the main variable-importance pattern reasonably well. Sleep duration was the most important predictor in both the fitted forest and the true data-generating process, while alcohol and resting heart rate deviation were also relatively important. Differences for variables such as training strain, sleep efficiency and steps likely reflect finite noisy data and correlations among predictors.
 
 ### How does sleep duration relate to predicted performance?
 
