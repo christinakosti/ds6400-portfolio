@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>5&nbsp; Polynomial Regression: Natural, Bernstein and Orthogonal Bases – ds6400-portfolio</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./04-random-forests.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-631496449bf32ff9b0bb69a6bfd9195d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./05-polynomial-regression.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Polynomial Regression: Natural, Bernstein and Orthogonal Bases</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">ds6400-portfolio</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-cross-validation-selection-bias.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Cross-Validation Selection Bias</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-632-plus-bootstrap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">The .632+ Bootstrap Method</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-pdp-visualizing-the-model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-random-forests.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Random Forests</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-polynomial-regression.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Polynomial Regression: Natural, Bernstein and Orthogonal Bases</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">5.1</span> Introduction</a>
+  <ul class="collapse">
+  <li><a href="#example-dataset" id="toc-example-dataset" class="nav-link" data-scroll-target="#example-dataset"><span class="header-section-number">5.1.1</span> Example Dataset</a></li>
+  <li><a href="#linear-versus-polynomial-regression" id="toc-linear-versus-polynomial-regression" class="nav-link" data-scroll-target="#linear-versus-polynomial-regression"><span class="header-section-number">5.1.2</span> Linear Versus Polynomial Regression</a></li>
+  <li><a href="#applied-research-example-muscle-strength-assessment" id="toc-applied-research-example-muscle-strength-assessment" class="nav-link" data-scroll-target="#applied-research-example-muscle-strength-assessment"><span class="header-section-number">5.1.3</span> Applied Research Example: Muscle Strength Assessment</a></li>
+  </ul></li>
+  <li><a href="#basis-expansion-mathematical-foundation" id="toc-basis-expansion-mathematical-foundation" class="nav-link" data-scroll-target="#basis-expansion-mathematical-foundation"><span class="header-section-number">5.2</span> Basis Expansion: Mathematical Foundation</a>
+  <ul class="collapse">
+  <li><a href="#general-mathematical-formulation" id="toc-general-mathematical-formulation" class="nav-link" data-scroll-target="#general-mathematical-formulation"><span class="header-section-number">5.2.1</span> General Mathematical Formulation</a></li>
+  <li><a href="#the-design-matrix" id="toc-the-design-matrix" class="nav-link" data-scroll-target="#the-design-matrix"><span class="header-section-number">5.2.2</span> The Design Matrix</a></li>
+  <li><a href="#why-different-polynomial-bases" id="toc-why-different-polynomial-bases" class="nav-link" data-scroll-target="#why-different-polynomial-bases"><span class="header-section-number">5.2.3</span> Why Different Polynomial Bases?</a></li>
+  </ul></li>
+  <li><a href="#natural-raw-polynomials" id="toc-natural-raw-polynomials" class="nav-link" data-scroll-target="#natural-raw-polynomials"><span class="header-section-number">5.3</span> Natural (Raw) Polynomials</a>
+  <ul class="collapse">
+  <li><a href="#mathematical-formulation" id="toc-mathematical-formulation" class="nav-link" data-scroll-target="#mathematical-formulation"><span class="header-section-number">5.3.1</span> Mathematical Formulation</a></li>
+  <li><a href="#r-implementation" id="toc-r-implementation" class="nav-link" data-scroll-target="#r-implementation"><span class="header-section-number">5.3.2</span> R Implementation</a></li>
+  <li><a href="#code-explanation-and-interpretation" id="toc-code-explanation-and-interpretation" class="nav-link" data-scroll-target="#code-explanation-and-interpretation"><span class="header-section-number">5.3.3</span> Code Explanation and Interpretation</a></li>
+  </ul></li>
+  <li><a href="#bernstein-polynomials" id="toc-bernstein-polynomials" class="nav-link" data-scroll-target="#bernstein-polynomials"><span class="header-section-number">5.4</span> Bernstein Polynomials</a>
+  <ul class="collapse">
+  <li><a href="#mathematical-formulation-1" id="toc-mathematical-formulation-1" class="nav-link" data-scroll-target="#mathematical-formulation-1"><span class="header-section-number">5.4.1</span> Mathematical Formulation</a></li>
+  <li><a href="#r-implementation-1" id="toc-r-implementation-1" class="nav-link" data-scroll-target="#r-implementation-1"><span class="header-section-number">5.4.2</span> R Implementation</a></li>
+  <li><a href="#code-explanation-and-interpretation-1" id="toc-code-explanation-and-interpretation-1" class="nav-link" data-scroll-target="#code-explanation-and-interpretation-1"><span class="header-section-number">5.4.3</span> Code Explanation and Interpretation</a></li>
+  </ul></li>
+  <li><a href="#orthogonal-polynomials" id="toc-orthogonal-polynomials" class="nav-link" data-scroll-target="#orthogonal-polynomials"><span class="header-section-number">5.5</span> Orthogonal Polynomials</a>
+  <ul class="collapse">
+  <li><a href="#mathematical-formulation-2" id="toc-mathematical-formulation-2" class="nav-link" data-scroll-target="#mathematical-formulation-2"><span class="header-section-number">5.5.1</span> Mathematical Formulation</a></li>
+  <li><a href="#r-implementation-2" id="toc-r-implementation-2" class="nav-link" data-scroll-target="#r-implementation-2"><span class="header-section-number">5.5.2</span> R Implementation</a></li>
+  <li><a href="#code-explanation-and-interpretation-2" id="toc-code-explanation-and-interpretation-2" class="nav-link" data-scroll-target="#code-explanation-and-interpretation-2"><span class="header-section-number">5.5.3</span> Code Explanation and Interpretation</a></li>
+  </ul></li>
+  <li><a href="#comparison-of-polynomial-bases" id="toc-comparison-of-polynomial-bases" class="nav-link" data-scroll-target="#comparison-of-polynomial-bases"><span class="header-section-number">5.6</span> Comparison of Polynomial Bases</a>
+  <ul class="collapse">
+  <li><a href="#comparison-of-the-three-approaches" id="toc-comparison-of-the-three-approaches" class="nav-link" data-scroll-target="#comparison-of-the-three-approaches"><span class="header-section-number">5.6.1</span> Comparison of the Three Approaches</a></li>
+  <li><a href="#comparing-fitted-relationships" id="toc-comparing-fitted-relationships" class="nav-link" data-scroll-target="#comparing-fitted-relationships"><span class="header-section-number">5.6.2</span> Comparing Fitted Relationships</a></li>
+  </ul></li>
+  <li><a href="#practical-considerations" id="toc-practical-considerations" class="nav-link" data-scroll-target="#practical-considerations"><span class="header-section-number">5.7</span> Practical Considerations</a>
+  <ul class="collapse">
+  <li><a href="#selecting-polynomial-degree" id="toc-selecting-polynomial-degree" class="nav-link" data-scroll-target="#selecting-polynomial-degree"><span class="header-section-number">5.7.1</span> Selecting Polynomial Degree</a></li>
+  <li><a href="#numerical-stability" id="toc-numerical-stability" class="nav-link" data-scroll-target="#numerical-stability"><span class="header-section-number">5.7.2</span> Numerical Stability</a></li>
+  <li><a href="#extrapolation" id="toc-extrapolation" class="nav-link" data-scroll-target="#extrapolation"><span class="header-section-number">5.7.3</span> Extrapolation</a></li>
+  <li><a href="#interpretation-and-scientific-relevance" id="toc-interpretation-and-scientific-relevance" class="nav-link" data-scroll-target="#interpretation-and-scientific-relevance"><span class="header-section-number">5.7.4</span> Interpretation and Scientific Relevance</a></li>
+  </ul></li>
+  <li><a href="#key-takeaways" id="toc-key-takeaways" class="nav-link" data-scroll-target="#key-takeaways"><span class="header-section-number">5.8</span> Key Takeaways</a></li>
+  <li><a href="#ai-acknowledgment" id="toc-ai-acknowledgment" class="nav-link" data-scroll-target="#ai-acknowledgment"><span class="header-section-number">5.9</span> AI Acknowledgment</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Polynomial Regression: Natural, Bernstein and Orthogonal Bases</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">5.1</span> Introduction</h2>
+<p>Linear regression is one of the most widely used statistical methods for modeling relationships between variables. In its simplest form, it assumes that the expected outcome changes at a constant rate with respect to a predictor:</p>
+<p><span class="math display">\[
+E[Y \mid x] = \beta_0 + \beta_1 x
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(Y\)</span> is the outcome variable.</li>
+<li><span class="math inline">\(x\)</span> is the predictor.</li>
+<li><span class="math inline">\(\beta_0\)</span> is the intercept.</li>
+<li><span class="math inline">\(\beta_1\)</span> is the regression coefficient representing the constant slope.</li>
+</ul>
+<p>However, many relationships in biological, physical and social sciences are nonlinear. For example, muscle strength may increase during early adulthood, plateau and then decline with advancing age. A straight line may fail to capture such changes in slope.</p>
+<p><strong>Polynomial regression</strong> addresses this limitation by incorporating powers of the predictor into the regression model.</p>
+<p>A quadratic model can be written as:</p>
+<p><span class="math display">\[
+E[Y \mid x] = \beta_0 + \beta_1 x + \beta_2 x^2
+\]</span></p>
+<p>Adding the squared term allows the fitted relationship to curve rather than follow a straight line.</p>
+<p>Importantly, polynomial regression remains a <strong>linear model in its coefficients</strong>, even though the relationship between the predictor and outcome is nonlinear.</p>
+<p>This distinction is important: linearity in regression refers to how the coefficients enter the model, not necessarily to the shape of the relationship between variables.</p>
+<section id="example-dataset" class="level3" data-number="5.1.1">
+<h3 data-number="5.1.1" class="anchored" data-anchor-id="example-dataset"><span class="header-section-number">5.1.1</span> Example Dataset</h3>
+<p>Throughout this chapter, we use a simulated dataset describing the relationship between age and isokinetic muscle strength.</p>
+<p>The data are generated from a nonlinear function with added random noise. This allows us to compare how different polynomial representations recover the same underlying relationship.</p>
+<p>The dataset is entirely simulated and is intended for methodological illustration rather than physiological inference.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of observations</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">150</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate participant ages</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">runif</span>(n, <span class="at">min =</span> <span class="dv">20</span>, <span class="at">max =</span> <span class="dv">80</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate a nonlinear strength relationship</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>sim<span class="sc">$</span>strength <span class="ot">&lt;-</span> <span class="dv">250</span> <span class="sc">-</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.06</span> <span class="sc">*</span> (sim<span class="sc">$</span>age <span class="sc">-</span> <span class="dv">35</span>)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">15</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Scale age to the interval [0, 1]</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>sim<span class="sc">$</span>age_scaled <span class="ot">&lt;-</span> (sim<span class="sc">$</span>age <span class="sc">-</span> <span class="dv">20</span>) <span class="sc">/</span> (<span class="dv">80</span> <span class="sc">-</span> <span class="dv">20</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect the first observations</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sim)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>       age strength age_scaled
+1 61.92041 191.8603 0.69867347
+2 53.39183 261.5718 0.55653051
+3 28.40840 257.7085 0.14013996
+4 37.14340 244.5738 0.28572331
+5 53.32214 241.6355 0.55536901
+6 21.50787 221.7441 0.02513115</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the data</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  sim<span class="sc">$</span>age,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  sim<span class="sc">$</span>strength,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch =</span> <span class="dv">19</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">adjustcolor</span>(<span class="st">"steelblue"</span>, <span class="at">alpha.f =</span> <span class="fl">0.5</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Age (years)"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Simulated peak torque (Nm)"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"Age and Muscle Strength"</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="05-polynomial-regression_files/figure-html/simulate-data-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Simulated relationship between age and muscle strength.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Code explanation</strong></p>
+<ul>
+<li><code>set.seed(2026)</code> ensures that the same random dataset is generated whenever the code is executed.</li>
+<li><code>runif()</code> generates 150 ages uniformly distributed between 20 and 80 years.</li>
+<li>The quadratic function generates a nonlinear relationship between age and strength.</li>
+<li><code>rnorm()</code> introduces random normally distributed variation around the underlying relationship.</li>
+<li><code>age_scaled</code> transforms age to a 0–1 scale, which will be useful when constructing Bernstein polynomial basis functions.</li>
+<li><code>plot()</code> displays the observed relationship before fitting any regression model.</li>
+</ul>
+</section>
+<section id="linear-versus-polynomial-regression" class="level3" data-number="5.1.2">
+<h3 data-number="5.1.2" class="anchored" data-anchor-id="linear-versus-polynomial-regression"><span class="header-section-number">5.1.2</span> Linear Versus Polynomial Regression</h3>
+<p>To illustrate the motivation for polynomial regression, we compare a conventional linear model with a cubic polynomial model.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit a conventional linear model</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>linear_fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  strength <span class="sc">~</span> age,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> sim</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit a cubic polynomial model</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>poly_fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  strength <span class="sc">~</span> <span class="fu">poly</span>(age, <span class="dv">3</span>, <span class="at">raw =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> sim</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate a sequence of ages for predictions</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>age_grid <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">seq</span>(<span class="dv">20</span>, <span class="dv">80</span>, <span class="at">length.out =</span> <span class="dv">300</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot observed data</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  sim<span class="sc">$</span>age,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  sim<span class="sc">$</span>strength,</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch =</span> <span class="dv">19</span>,</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">adjustcolor</span>(<span class="st">"gray40"</span>, <span class="at">alpha.f =</span> <span class="fl">0.4</span>),</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Age (years)"</span>,</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Simulated peak torque (Nm)"</span>,</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"Linear vs. Polynomial Regression"</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Add model predictions</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  age_grid<span class="sc">$</span>age,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(linear_fit, <span class="at">newdata =</span> age_grid),</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">"steelblue"</span>,</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">lwd =</span> <span class="dv">3</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>  age_grid<span class="sc">$</span>age,</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(poly_fit, <span class="at">newdata =</span> age_grid),</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">"darkorange"</span>,</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>  <span class="at">lwd =</span> <span class="dv">3</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>  <span class="st">"topright"</span>,</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Linear"</span>, <span class="st">"Cubic polynomial"</span>),</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"darkorange"</span>),</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>  <span class="at">lwd =</span> <span class="dv">3</span>,</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>  <span class="at">bty =</span> <span class="st">"n"</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="05-polynomial-regression_files/figure-html/linear-vs-polynomial-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Comparison of linear and cubic polynomial regression.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretation</strong></p>
+<p>The linear regression model estimates a constant change in predicted muscle strength per one-year increase in age.</p>
+<p>The cubic polynomial model allows the slope to vary across age, capturing curvature that a straight-line model cannot represent.</p>
+<p>This greater flexibility can improve representation of a nonlinear relationship. However, increasing flexibility does not necessarily improve generalization to new observations. Polynomial degree must therefore be selected carefully.</p>
+</section>
+<section id="applied-research-example-muscle-strength-assessment" class="level3" data-number="5.1.3">
+<h3 data-number="5.1.3" class="anchored" data-anchor-id="applied-research-example-muscle-strength-assessment"><span class="header-section-number">5.1.3</span> Applied Research Example: Muscle Strength Assessment</h3>
+<p>Polynomial fitting has practical applications in exercise physiology. For example, in my first-author publication (Kosti et al., 2026), we applied third-degree polynomial fitting to hand-held dynamometry measurements to estimate force at standardized knee joint angles. This approach facilitated comparisons of muscle strength across the range of motion between hand-held and isokinetic dynamometry.</p>
+<p>The study illustrates how polynomial fitting can support the analysis of nonlinear biomechanical relationships in experimental research.</p>
+<p><strong>Reference:</strong> <a href="https://doi.org/10.5114/jhk/210346">Kosti et al.&nbsp;(2026), Journal of Human Kinetics</a>.</p>
+</section>
+</section>
+<section id="basis-expansion-mathematical-foundation" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="basis-expansion-mathematical-foundation"><span class="header-section-number">5.2</span> Basis Expansion: Mathematical Foundation</h2>
+<p>The mathematical foundation of polynomial regression is <strong>basis expansion</strong>.</p>
+<p>A basis is a set of linearly independent functions that can be combined to represent any function within a specified function space.</p>
+<p>For example, the functions</p>
+<p><span class="math display">\[
+1,\quad x,\quad x^2
+\]</span></p>
+<p>form a basis for all polynomial functions of degree two or less.</p>
+<p>Any quadratic polynomial can be expressed as a linear combination of these three functions:</p>
+<p><span class="math display">\[
+f(x) = \beta_0(1) + \beta_1(x) + \beta_2(x^2)
+\]</span></p>
+<p>Each function is called a <strong>basis function</strong>, and each coefficient determines its contribution to the resulting curve.</p>
+<section id="general-mathematical-formulation" class="level3" data-number="5.2.1">
+<h3 data-number="5.2.1" class="anchored" data-anchor-id="general-mathematical-formulation"><span class="header-section-number">5.2.1</span> General Mathematical Formulation</h3>
+<p>Rather than including only the original predictor <span class="math inline">\(x\)</span>, basis expansion transforms it into a set of functions:</p>
+<p><span class="math display">\[
+b_0(x), b_1(x), \ldots, b_K(x)
+\]</span></p>
+<p>The resulting regression model is:</p>
+<p><span class="math display">\[
+\boxed{
+E[Y \mid x] = \sum_{k=0}^{K} \beta_k b_k(x)
+}
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(K+1\)</span> is the number of basis functions.</li>
+<li><span class="math inline">\(b_k(x)\)</span> is the <span class="math inline">\(k\)</span>th basis function.</li>
+<li><span class="math inline">\(\beta_k\)</span> is its corresponding regression coefficient.</li>
+<li><span class="math inline">\(b_0(x)=1\)</span> commonly represents the intercept.</li>
+</ul>
+<p>The model remains linear in its coefficients because each <span class="math inline">\(\beta_k\)</span> enters only through multiplication by a known basis function.</p>
+<p>Different choices of basis functions allow the model to represent different function classes, including polynomial relationships.</p>
+</section>
+<section id="the-design-matrix" class="level3" data-number="5.2.2">
+<h3 data-number="5.2.2" class="anchored" data-anchor-id="the-design-matrix"><span class="header-section-number">5.2.2</span> The Design Matrix</h3>
+<p>For <span class="math inline">\(n\)</span> observations and <span class="math inline">\(K+1\)</span> basis functions, the regression design matrix is:</p>
+<p><span class="math display">\[
+X =
+\begin{bmatrix}
+b_0(x_1) &amp; b_1(x_1) &amp; \cdots &amp; b_K(x_1) \\
+b_0(x_2) &amp; b_1(x_2) &amp; \cdots &amp; b_K(x_2) \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+b_0(x_n) &amp; b_1(x_n) &amp; \cdots &amp; b_K(x_n)
+\end{bmatrix}
+\]</span></p>
+<p>Each row represents an observation, and each column represents a basis function evaluated at the observed predictor values.</p>
+<p>For a quadratic polynomial with <span class="math inline">\(x = (0, 0.5, 1)\)</span>, the raw polynomial design matrix becomes:</p>
+<p><span class="math display">\[
+X =
+\begin{bmatrix}
+1 &amp; 0 &amp; 0 \\
+1 &amp; 0.5 &amp; 0.25 \\
+1 &amp; 1 &amp; 1
+\end{bmatrix}
+\]</span></p>
+<p>The columns correspond to <span class="math inline">\(1\)</span>, <span class="math inline">\(x\)</span>, and <span class="math inline">\(x^2\)</span>, respectively.</p>
+<p>In matrix notation, the fitted model is:</p>
+<p><span class="math display">\[
+\hat{\mathbf{Y}} = X\hat{\boldsymbol{\beta}}
+\]</span></p>
+<p>where <span class="math inline">\(\hat{\mathbf{Y}}\)</span> is the vector of fitted outcomes and <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> is the vector of estimated coefficients.</p>
+<p>Provided the design matrix has full column rank, ordinary least squares estimates the coefficients as:</p>
+<p><span class="math display">\[
+\hat{\boldsymbol{\beta}}
+=
+(X^\top X)^{-1}X^\top\mathbf{Y}
+\]</span></p>
+<p>Thus, polynomial regression does not require a fundamentally different estimation procedure. It changes the design matrix by introducing transformed predictors.</p>
+</section>
+<section id="why-different-polynomial-bases" class="level3" data-number="5.2.3">
+<h3 data-number="5.2.3" class="anchored" data-anchor-id="why-different-polynomial-bases"><span class="header-section-number">5.2.3</span> Why Different Polynomial Bases?</h3>
+<p>A polynomial function can be represented using different sets of basis functions.</p>
+<p>Three important approaches are:</p>
+<ol type="1">
+<li><strong>Natural (raw) polynomials:</strong> use powers of the predictor, such as <span class="math inline">\(1\)</span>, <span class="math inline">\(x\)</span>, <span class="math inline">\(x^2\)</span>, and <span class="math inline">\(x^3\)</span>.</li>
+<li><strong>Bernstein polynomials:</strong> express polynomial functions using a binomial-based basis, typically defined over a bounded interval.</li>
+<li><strong>Orthogonal polynomials:</strong> construct basis functions whose evaluated columns are mutually orthogonal, improving numerical stability.</li>
+</ol>
+<p>For a fixed polynomial degree, each of these approaches spans the same polynomial function space.</p>
+<p>Consequently, when fitted using ordinary least squares without additional constraints or penalties, and with full-rank design matrices, they produce identical fitted values up to numerical precision.</p>
+<p>Their differences concern <strong>how the polynomial is represented, the interpretation of its coefficients, and its numerical properties</strong>.</p>
+<p>The following sections examine each representation mathematically and computationally.</p>
+</section>
+</section>
+<section id="natural-raw-polynomials" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="natural-raw-polynomials"><span class="header-section-number">5.3</span> Natural (Raw) Polynomials</h2>
+<p>Natural, or raw, polynomials model nonlinear relationships using successive powers of a predictor. They provide the most straightforward polynomial basis and serve as a reference for understanding alternative representations.</p>
+<section id="mathematical-formulation" class="level3" data-number="5.3.1">
+<h3 data-number="5.3.1" class="anchored" data-anchor-id="mathematical-formulation"><span class="header-section-number">5.3.1</span> Mathematical Formulation</h3>
+<p>For a polynomial of degree <span class="math inline">\(d\)</span>, the raw basis functions are:</p>
+<p><span class="math display">\[
+b_k(x)=x^k,\qquad k=0,1,\ldots,d
+\]</span></p>
+<p>The resulting regression model is:</p>
+<p><span class="math display">\[
+E[Y\mid x]=\sum_{k=0}^{d}\beta_kx^k
+\]</span></p>
+<p>For a cubic polynomial (<span class="math inline">\(d=3\)</span>):</p>
+<p><span class="math display">\[
+E[Y\mid x]=\beta_0+\beta_1x+\beta_2x^2+\beta_3x^3
+\]</span></p>
+<p>The basis consists of four functions: <span class="math inline">\(1\)</span>, <span class="math inline">\(x\)</span>, <span class="math inline">\(x^2\)</span>, and <span class="math inline">\(x^3\)</span>. Their coefficients determine the shape of the fitted relationship.</p>
+<p>Unlike simple linear regression, the slope of a polynomial model can change across the predictor’s range. For a cubic polynomial, differentiating with respect to <span class="math inline">\(x\)</span> gives:</p>
+<p><span class="math display">\[
+\frac{dE[Y\mid x]}{dx}
+=\beta_1+2\beta_2x+3\beta_3x^2
+\]</span></p>
+<p>Thus, the rate of change in the expected outcome depends on <span class="math inline">\(x\)</span>, allowing the model to represent curvature.</p>
+</section>
+<section id="r-implementation" class="level3" data-number="5.3.2">
+<h3 data-number="5.3.2" class="anchored" data-anchor-id="r-implementation"><span class="header-section-number">5.3.2</span> R Implementation</h3>
+<p>We use the simulated age and muscle-strength dataset introduced in Section 1.</p>
+<p>For visualization and numerical convenience, age is scaled to the interval <span class="math inline">\([0,1]\)</span>:</p>
+<p><span class="math display">\[
+t=\frac{\text{Age}-20}{60}
+\]</span></p>
+<p>Here, <span class="math inline">\(t\)</span> represents scaled age, where 0 corresponds to 20 years and 1 corresponds to 80 years. This transformation was already applied when creating <code>sim$age_scaled</code>.</p>
+<p>First, we visualize the four basis functions of a cubic polynomial.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate 200 scaled age values between 0 and 1</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>t_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Construct the raw polynomial basis matrix</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>raw_basis <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"1"</span> <span class="ot">=</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="fu">length</span>(t_grid)),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"t"</span> <span class="ot">=</span> t_grid,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"t²"</span> <span class="ot">=</span> t_grid<span class="sc">^</span><span class="dv">2</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"t³"</span> <span class="ot">=</span> t_grid<span class="sc">^</span><span class="dv">3</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize individual basis functions</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  t_grid, raw_basis,</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="dv">2</span>,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"steelblue"</span>,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>          <span class="st">"darkorange"</span>, <span class="st">"forestgreen"</span>),</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Scaled age (t)"</span>,</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Basis function value"</span>,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"Raw Polynomial Basis"</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="st">"right"</span>,</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">colnames</span>(raw_basis),</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"steelblue"</span>,</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>          <span class="st">"darkorange"</span>, <span class="st">"forestgreen"</span>),</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">bty =</span> <span class="st">"n"</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="05-polynomial-regression_files/figure-html/raw-basis-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Raw polynomial basis functions of degree 3.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The plot illustrates how successive powers of scaled age produce different basis functions. These functions are not separate regression predictions; their weighted combination generates the final fitted curve.</p>
+<p>We now fit a cubic polynomial to the simulated data and summarize its estimated coefficients.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit a cubic polynomial regression</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>raw_fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  strength <span class="sc">~</span> <span class="fu">poly</span>(age_scaled, <span class="dv">3</span>, <span class="at">raw =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> sim</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract estimated coefficients and statistics</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>coef_stats <span class="ot">&lt;-</span> <span class="fu">summary</span>(raw_fit)<span class="sc">$</span>coefficients</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a formatted coefficient table</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>coef_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Term =</span> <span class="fu">c</span>(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Intercept"</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Scaled age (t)"</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Scaled age squared (t²)"</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Scaled age cubed (t³)"</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">round</span>(coef_stats[, <span class="st">"Estimate"</span>], <span class="dv">2</span>),</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(coef_stats[, <span class="st">"Std. Error"</span>], <span class="dv">2</span>),</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">p-value</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">ifelse</span>(</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  coef_stats[, <span class="st">"Pr(&gt;|t|)"</span>] <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>  <span class="st">"&lt; 0.001"</span>,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sprintf</span>(<span class="st">"%.3f"</span>, coef_stats[, <span class="st">"Pr(&gt;|t|)"</span>])</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>),</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Display a clean coefficient table</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>  coef_table,</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Cubic Raw Polynomial Regression Coefficients"</span>,</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Cubic Raw Polynomial Regression Coefficients</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Std. Error</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">230.65</td>
+<td style="text-align: right;">4.29</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Scaled age (t)</td>
+<td style="text-align: right;">150.49</td>
+<td style="text-align: right;">40.43</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Scaled age squared (t²)</td>
+<td style="text-align: right;">-285.57</td>
+<td style="text-align: right;">99.28</td>
+<td style="text-align: right;">0.005</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Scaled age cubed (t³)</td>
+<td style="text-align: right;">37.20</td>
+<td style="text-align: right;">67.61</td>
+<td style="text-align: right;">0.583</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="code-explanation-and-interpretation" class="level3" data-number="5.3.3">
+<h3 data-number="5.3.3" class="anchored" data-anchor-id="code-explanation-and-interpretation"><span class="header-section-number">5.3.3</span> Code Explanation and Interpretation</h3>
+<p>The key components of the implementation are:</p>
+<ul>
+<li><code>poly(age_scaled, 3, raw = TRUE)</code> constructs the three nonconstant basis functions: <span class="math inline">\(t\)</span>, <span class="math inline">\(t^2\)</span>, and <span class="math inline">\(t^3\)</span>, where <span class="math inline">\(t\)</span> represents scaled age.</li>
+<li><code>raw = TRUE</code> specifies ordinary polynomial powers rather than orthogonal polynomials, which are R’s default.</li>
+<li><code>lm()</code> estimates the coefficients using ordinary least squares and includes an intercept automatically.</li>
+<li><code>summary(raw_fit)$coefficients</code> extracts the estimated coefficients, standard errors, test statistics, and p-values.</li>
+<li><code>data.frame()</code> organizes the relevant statistics into a table, while <code>knitr::kable()</code> formats it for presentation in the HTML document.</li>
+<li><code>matplot()</code> visualizes the individual polynomial basis functions.</li>
+</ul>
+<p>The estimated model can be expressed as:</p>
+<p><span class="math display">\[
+\widehat{\text{Strength}}
+=\hat\beta_0+\hat\beta_1t+\hat\beta_2t^2+\hat\beta_3t^3
+\]</span></p>
+<p>where <span class="math inline">\(t=(\text{Age}-20)/60\)</span>.</p>
+<p>The intercept represents predicted muscle strength at age 20 (<span class="math inline">\(t=0\)</span>).</p>
+<p>Because the slope varies with age, the remaining coefficients should be interpreted jointly rather than as independent, constant effects. In particular, <span class="math inline">\(\hat\beta_1\)</span> represents the slope with respect to scaled age at <span class="math inline">\(t=0\)</span>, while <span class="math inline">\(\hat\beta_2\)</span> and <span class="math inline">\(\hat\beta_3\)</span> contribute to changes in that slope.</p>
+<p>The fitted curve was already visualized in Section 1. The emphasis here is on how the raw polynomial basis constructs that relationship.</p>
+</section>
+</section>
+<section id="bernstein-polynomials" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="bernstein-polynomials"><span class="header-section-number">5.4</span> Bernstein Polynomials</h2>
+<p>Bernstein polynomials provide an alternative representation of polynomial functions. Rather than using successive powers of a predictor directly, they construct basis functions from the binomial expansion.</p>
+<p>This reparameterization preserves the flexibility of ordinary polynomial regression while providing useful numerical and mathematical properties.</p>
+<section id="mathematical-formulation-1" class="level3" data-number="5.4.1">
+<h3 data-number="5.4.1" class="anchored" data-anchor-id="mathematical-formulation-1"><span class="header-section-number">5.4.1</span> Mathematical Formulation</h3>
+<p>For a polynomial of degree <span class="math inline">\(d\)</span>, the Bernstein basis functions are defined as:</p>
+<p><span class="math display">\[
+\boxed{
+B_{k,d}(t)=\binom{d}{k}t^k(1-t)^{d-k}
+}
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(d\)</span> is the polynomial degree.</li>
+<li><span class="math inline">\(k=0,1,\ldots,d\)</span> identifies the basis function.</li>
+<li><span class="math inline">\(t\)</span> is the predictor scaled to the interval <span class="math inline">\([0,1]\)</span>.</li>
+<li><span class="math inline">\(\binom{d}{k}=\frac{d!}{k!(d-k)!}\)</span> is the binomial coefficient, representing the number of ways to choose <span class="math inline">\(k\)</span> elements from <span class="math inline">\(d\)</span> elements.</li>
+</ul>
+<p>For a predictor <span class="math inline">\(x\)</span> defined on the interval <span class="math inline">\([a,b]\)</span>, the scaled variable is:</p>
+<p><span class="math display">\[
+t=\frac{x-a}{b-a}
+\]</span></p>
+<p>In our dataset, age ranges from 20 to 80 years, so:</p>
+<p><span class="math display">\[
+t=\frac{\text{Age}-20}{60}
+\]</span></p>
+<p>This transformation maps ages 20 and 80 to 0 and 1, respectively, without losing information.</p>
+<section id="derivation-from-the-binomial-theorem" class="level4" data-number="5.4.1.1">
+<h4 data-number="5.4.1.1" class="anchored" data-anchor-id="derivation-from-the-binomial-theorem"><span class="header-section-number">5.4.1.1</span> Derivation from the Binomial Theorem</h4>
+<p>The Bernstein basis follows directly from the binomial theorem:</p>
+<p><span class="math display">\[
+(a+b)^d=\sum_{k=0}^{d}\binom{d}{k}a^kb^{d-k}
+\]</span></p>
+<p>Substituting <span class="math inline">\(a=t\)</span> and <span class="math inline">\(b=1-t\)</span> gives:</p>
+<p><span class="math display">\[
+[t+(1-t)]^d
+=
+\sum_{k=0}^{d}\binom{d}{k}t^k(1-t)^{d-k}
+\]</span></p>
+<p>Since <span class="math inline">\(t+(1-t)=1\)</span>, the expression becomes:</p>
+<p><span class="math display">\[
+\sum_{k=0}^{d}B_{k,d}(t)=1
+\]</span></p>
+<p>Therefore, the Bernstein basis functions always sum to one.</p>
+<p>For a cubic polynomial (<span class="math inline">\(d=3\)</span>), the four basis functions are:</p>
+<p><span class="math display">\[
+\begin{aligned}
+B_{0,3}(t)&amp;=(1-t)^3\\
+B_{1,3}(t)&amp;=3t(1-t)^2\\
+B_{2,3}(t)&amp;=3t^2(1-t)\\
+B_{3,3}(t)&amp;=t^3
+\end{aligned}
+\]</span></p>
+<p>For example, at <span class="math inline">\(t=0.5\)</span>, their values are <span class="math inline">\(0.125\)</span>, <span class="math inline">\(0.375\)</span>, <span class="math inline">\(0.375\)</span>, and <span class="math inline">\(0.125\)</span>, which sum to one.</p>
+</section>
+<section id="regression-using-the-bernstein-basis" class="level4" data-number="5.4.1.2">
+<h4 data-number="5.4.1.2" class="anchored" data-anchor-id="regression-using-the-bernstein-basis"><span class="header-section-number">5.4.1.2</span> Regression Using the Bernstein Basis</h4>
+<p>A polynomial regression model can be expressed as:</p>
+<p><span class="math display">\[
+\boxed{
+E[Y\mid t]=\sum_{k=0}^{d}\alpha_k B_{k,d}(t)
+}
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(E[Y\mid t]\)</span> is the expected outcome for a given value of the scaled predictor <span class="math inline">\(t\)</span>.</li>
+<li><span class="math inline">\(\sum\)</span> indicates that all terms are added together.</li>
+<li><span class="math inline">\(d\)</span> is the polynomial degree.</li>
+<li><span class="math inline">\(k\)</span> indexes the basis functions, from <span class="math inline">\(0\)</span> to <span class="math inline">\(d\)</span>.</li>
+<li><span class="math inline">\(\alpha_k\)</span> is the regression coefficient estimated from the data, determining the contribution of the corresponding basis function.</li>
+<li><span class="math inline">\(B_{k,d}(t)\)</span> is the Bernstein basis function, calculated from the scaled predictor <span class="math inline">\(t\)</span>.</li>
+</ul>
+<p>For a cubic polynomial (<span class="math inline">\(d=3\)</span>), the model becomes:</p>
+<p><span class="math display">\[
+E[Y\mid t]=
+\alpha_0B_{0,3}(t)+
+\alpha_1B_{1,3}(t)+
+\alpha_2B_{2,3}(t)+
+\alpha_3B_{3,3}(t)
+\]</span></p>
+<p>Each Bernstein basis function is multiplied by its corresponding regression coefficient. The four products are then summed to obtain the predicted outcome.</p>
+<p>Thus, <strong>the basis functions determine the mathematical building blocks, while the estimated coefficients determine how they are combined to form the fitted curve.</strong></p>
+<p>Two important properties follow from this construction:</p>
+<ol type="1">
+<li><strong>Nonnegativity:</strong> <span class="math inline">\(B_{k,d}(t)\geq 0\)</span> for <span class="math inline">\(t\in[0,1]\)</span>.</li>
+<li><strong>Partition of unity:</strong> The basis functions sum to one at every value of <span class="math inline">\(t\)</span>.</li>
+</ol>
+<p>Consequently, the predicted value is a weighted average of the Bernstein coefficients and lies between their minimum and maximum values within the specified interval.</p>
+<p>Although their expressions differ from raw polynomial powers, the Bernstein functions of degree <span class="math inline">\(d\)</span> span the same polynomial space as <span class="math inline">\(1,t,\ldots,t^d\)</span>.</p>
+<p>Thus, for the same degree, both bases can represent exactly the same polynomial relationships.</p>
+</section>
+</section>
+<section id="r-implementation-1" class="level3" data-number="5.4.2">
+<h3 data-number="5.4.2" class="anchored" data-anchor-id="r-implementation-1"><span class="header-section-number">5.4.2</span> R Implementation</h3>
+<p>We use the same simulated dataset and cubic polynomial degree as in Section 3.</p>
+<p>First, we construct the Bernstein basis functions directly from their mathematical definition.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a function to construct the Bernstein basis</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>bern_basis <span class="ot">&lt;-</span> <span class="cf">function</span>(t, <span class="at">degree =</span> <span class="dv">3</span>) {</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  basis <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">0</span><span class="sc">:</span>degree, <span class="cf">function</span>(k) {</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">choose</span>(degree, k) <span class="sc">*</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      t<span class="sc">^</span>k <span class="sc">*</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      (<span class="dv">1</span> <span class="sc">-</span> t)<span class="sc">^</span>(degree <span class="sc">-</span> k)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(basis) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"B"</span>, <span class="dv">0</span><span class="sc">:</span>degree)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(basis)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate predictor values from 0 to 1</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>t_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Construct cubic Bernstein basis functions</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>bern_grid <span class="ot">&lt;-</span> <span class="fu">bern_basis</span>(t_grid, <span class="at">degree =</span> <span class="dv">3</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the basis functions</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  t_grid, bern_grid,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="dv">2</span>,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"steelblue"</span>,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>          <span class="st">"darkorange"</span>, <span class="st">"forestgreen"</span>),</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Scaled predictor (t)"</span>,</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Basis function value"</span>,</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"Bernstein Polynomial Basis"</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>  <span class="st">"topright"</span>,</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">colnames</span>(bern_grid),</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"steelblue"</span>,</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>          <span class="st">"darkorange"</span>, <span class="st">"forestgreen"</span>),</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">bty =</span> <span class="st">"n"</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="05-polynomial-regression_files/figure-html/bernstein-basis-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Bernstein polynomial basis functions of degree 3.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Unlike raw polynomial powers, the Bernstein basis functions distribute their influence across different regions of the predictor interval.</p>
+<p>The first basis function is largest near <span class="math inline">\(t=0\)</span>, the last near <span class="math inline">\(t=1\)</span>, and the two intermediate functions contribute most strongly within the interval.</p>
+<p>We can verify that the basis functions sum to one:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify that the Bernstein basis functions sum to 1</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>check <span class="ot">&lt;-</span> <span class="fu">all</span>(<span class="fu">abs</span>(<span class="fu">rowSums</span>(bern_grid) <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">&lt;</span> <span class="fl">1e-10</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"All Bernstein basis functions sum to 1:"</span>, check)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>All Bernstein basis functions sum to 1: TRUE</code></pre>
+</div>
+</div>
+<p>The result confirms that the Bernstein basis functions sum to one across the predictor interval, up to numerical precision.</p>
+<section id="fitting-the-bernstein-regression-model" class="level4" data-number="5.4.2.1">
+<h4 data-number="5.4.2.1" class="anchored" data-anchor-id="fitting-the-bernstein-regression-model"><span class="header-section-number">5.4.2.1</span> Fitting the Bernstein Regression Model</h4>
+<p>We now construct the Bernstein basis for the observed ages and use it as the design matrix in a regression.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Construct the basis for the observed predictor</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>bern_train <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bern_basis</span>(sim<span class="sc">$</span>age_scaled, <span class="at">degree =</span> <span class="dv">3</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine basis functions with the outcome</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>bern_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">strength =</span> sim<span class="sc">$</span>strength,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  bern_train</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the Bernstein polynomial model</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>bern_fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  strength <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> B0 <span class="sc">+</span> B1 <span class="sc">+</span> B2 <span class="sc">+</span> B3,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> bern_data</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract coefficient statistics</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>coef_stats_bern <span class="ot">&lt;-</span> <span class="fu">summary</span>(bern_fit)<span class="sc">$</span>coefficients</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a formatted coefficient table</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>bern_coef_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">Term =</span> <span class="fu">rownames</span>(coef_stats_bern),</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">round</span>(coef_stats_bern[, <span class="st">"Estimate"</span>], <span class="dv">2</span>),</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(coef_stats_bern[, <span class="st">"Std. Error"</span>], <span class="dv">2</span>),</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">p-value</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">ifelse</span>(</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  coef_stats_bern[, <span class="st">"Pr(&gt;|t|)"</span>] <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="st">"&lt; 0.001"</span>,</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sprintf</span>(<span class="st">"%.3f"</span>, coef_stats_bern[, <span class="st">"Pr(&gt;|t|)"</span>])</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>),</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the formatted table</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>  bern_coef_table,</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Cubic Bernstein Polynomial Regression Coefficients"</span>,</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>)</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Cubic Bernstein Polynomial Regression Coefficients</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Std. Error</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">B0</td>
+<td style="text-align: right;">230.65</td>
+<td style="text-align: right;">4.29</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B1</td>
+<td style="text-align: right;">280.81</td>
+<td style="text-align: right;">10.13</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B2</td>
+<td style="text-align: right;">235.79</td>
+<td style="text-align: right;">11.10</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B3</td>
+<td style="text-align: right;">132.78</td>
+<td style="text-align: right;">5.78</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The model includes all four Bernstein basis functions.</p>
+<p>The formula contains <code>0 +</code> to remove the usual additional intercept because the Bernstein functions already sum to one. Including an intercept alongside all four basis functions would create an exact linear dependency in the design matrix.</p>
+</section>
+<section id="comparing-bernstein-and-raw-polynomial-predictions" class="level4" data-number="5.4.2.2">
+<h4 data-number="5.4.2.2" class="anchored" data-anchor-id="comparing-bernstein-and-raw-polynomial-predictions"><span class="header-section-number">5.4.2.2</span> Comparing Bernstein and Raw Polynomial Predictions</h4>
+<p>Because both models use degree-3 polynomial bases, they should produce equivalent fitted values.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate maximum absolute difference</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>max_difference <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">abs</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fitted</span>(raw_fit) <span class="sc">-</span> <span class="fu">fitted</span>(bern_fit)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Display a reader-friendly result</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Maximum difference between predictions:"</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ifelse</span>(max_difference <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>         <span class="st">"&lt; 0.001 Nm"</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>         <span class="fu">paste0</span>(<span class="fu">round</span>(max_difference, <span class="dv">3</span>), <span class="st">" Nm"</span>))</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Maximum difference between predictions: &lt; 0.001 Nm</code></pre>
+</div>
+</div>
+<p>The maximum absolute difference in fitted values is approximately zero, confirming that the raw and Bernstein polynomial models produce equivalent predictions up to numerical precision.</p>
+<p>Although their estimated coefficients differ, both models represent the same cubic polynomial function space. This illustrates that changing the polynomial basis alters the parameterization rather than the fitted relationship.</p>
+</section>
+</section>
+<section id="code-explanation-and-interpretation-1" class="level3" data-number="5.4.3">
+<h3 data-number="5.4.3" class="anchored" data-anchor-id="code-explanation-and-interpretation-1"><span class="header-section-number">5.4.3</span> Code Explanation and Interpretation</h3>
+<p>The implementation involves three key steps.</p>
+<p><strong>1. Constructing the Bernstein basis</strong></p>
+<p>The custom function <code>bern_basis()</code> implements the mathematical definition directly.</p>
+<ul>
+<li><code>choose(degree, k)</code> calculates the binomial coefficient.</li>
+<li><code>t^k</code> calculates <span class="math inline">\(t^k\)</span>, the scaled predictor raised to the power <span class="math inline">\(k\)</span>.</li>
+<li><code>(1-t)^(degree-k)</code> calculates <span class="math inline">\((1-t)^{d-k}\)</span>, the complementary term of the Bernstein formula.</li>
+<li><code>sapply()</code> evaluates the expression for every value of <span class="math inline">\(k\)</span>, creating one column per basis function.</li>
+</ul>
+<p>This approach makes the mathematical construction explicit rather than relying on a specialized package.</p>
+<p><strong>2. Estimating the model</strong></p>
+<p>The <code>lm()</code> function fits the regression using the four Bernstein basis columns.</p>
+<p>The expression <code>0 + B0 + B1 + B2 + B3</code> includes the complete Bernstein basis without introducing a redundant intercept.</p>
+<p>The resulting coefficients describe the contribution of each basis function to the predicted muscle-strength curve.</p>
+<p><strong>3. Verifying equivalence</strong></p>
+<p>The <code>fitted()</code> function extracts the predicted values from both polynomial models.</p>
+<p>Comparing these values demonstrates that the raw and Bernstein representations produce the same fitted relationship when estimated using ordinary least squares with the same degree and full-rank design matrices.</p>
+<section id="interpretation-of-bernstein-coefficients" class="level4" data-number="5.4.3.1">
+<h4 data-number="5.4.3.1" class="anchored" data-anchor-id="interpretation-of-bernstein-coefficients"><span class="header-section-number">5.4.3.1</span> Interpretation of Bernstein Coefficients</h4>
+<p>Unlike raw polynomial coefficients, Bernstein coefficients describe the combination of basis functions that determines the curve.</p>
+<p>For a cubic model:</p>
+<ul>
+<li><span class="math inline">\(\alpha_0\)</span> equals the predicted outcome at <span class="math inline">\(t=0\)</span>.</li>
+<li><span class="math inline">\(\alpha_3\)</span> equals the predicted outcome at <span class="math inline">\(t=1\)</span>.</li>
+<li><span class="math inline">\(\alpha_1\)</span> and <span class="math inline">\(\alpha_2\)</span> influence the curve’s behavior between the endpoints.</li>
+</ul>
+<p>In our example, the first and last coefficients correspond to predicted strength at ages 20 and 80 years.</p>
+<p>The intermediate coefficients are not necessarily predicted values at specific ages. Rather, they help determine the shape of the curve.</p>
+<p>Because the basis functions are nonnegative and sum to one, restrictions on the coefficients can also be used to impose useful properties on the fitted relationship, such as monotonicity.</p>
+<p>Overall, Bernstein polynomials provide a mathematically structured alternative to raw powers while preserving the same polynomial function space.</p>
+</section>
+</section>
+</section>
+<section id="orthogonal-polynomials" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="orthogonal-polynomials"><span class="header-section-number">5.5</span> Orthogonal Polynomials</h2>
+<p>Orthogonal polynomials provide another representation of polynomial regression. Unlike raw polynomial powers, which may be strongly correlated, orthogonal polynomial basis functions are constructed to be mutually orthogonal across the observed predictor values.</p>
+<p>This transformation improves numerical stability while preserving the polynomial function space.</p>
+<section id="mathematical-formulation-2" class="level3" data-number="5.5.1">
+<h3 data-number="5.5.1" class="anchored" data-anchor-id="mathematical-formulation-2"><span class="header-section-number">5.5.1</span> Mathematical Formulation</h3>
+<p>Two vectors are <strong>orthogonal</strong> when their dot product equals zero.</p>
+<p>For two vectors <span class="math inline">\(\mathbf{a}\)</span> and <span class="math inline">\(\mathbf{b}\)</span>, the dot product is defined as:</p>
+<p><span class="math display">\[
+\mathbf{a}^{\top}\mathbf{b}
+=
+\sum_{i=1}^{n}a_ib_i
+\]</span></p>
+<p>Orthogonality occurs when:</p>
+<p><span class="math display">\[
+\mathbf{a}^{\top}\mathbf{b}=0
+\]</span></p>
+<p>In polynomial regression, each basis function produces a column of the design matrix when evaluated at the observed predictor values.</p>
+<p>For example, raw quadratic regression uses the basis:</p>
+<p><span class="math display">\[
+1,\quad x,\quad x^2
+\]</span></p>
+<p>These columns are generally not orthogonal, because their pairwise dot products may be nonzero.</p>
+<p>Orthogonal polynomials construct new basis functions <span class="math inline">\(q_1(x),q_2(x),\ldots,q_d(x)\)</span> whose corresponding columns in the design matrix are mutually orthogonal.</p>
+<p>Mathematically, this means:</p>
+<p><span class="math display">\[
+\boxed{
+\sum_{i=1}^{n}q_j(x_i)q_k(x_i)=0,
+\qquad j\neq k
+}
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(n\)</span> is the number of observations.</li>
+<li><span class="math inline">\(x_i\)</span> is the predictor value for observation <span class="math inline">\(i\)</span>.</li>
+<li><span class="math inline">\(q_j(x_i)\)</span> and <span class="math inline">\(q_k(x_i)\)</span> are the values of two different polynomial basis functions evaluated at that observation.</li>
+<li><span class="math inline">\(\sum\)</span> indicates that the products are added across all observations.</li>
+<li><span class="math inline">\(j\neq k\)</span> means we are comparing two different basis functions.</li>
+</ul>
+<p>In simpler terms, <strong>the dot product between any two different basis-function columns equals zero</strong>.</p>
+<p>This does not mean the individual products must equal zero. Rather, their sum across all training observations must equal zero.</p>
+<p>The following numerical example demonstrates how this property can be achieved.</p>
+<section id="a-simple-numerical-example" class="level4" data-number="5.5.1.1">
+<h4 data-number="5.5.1.1" class="anchored" data-anchor-id="a-simple-numerical-example"><span class="header-section-number">5.5.1.1</span> A Simple Numerical Example</h4>
+<p>Consider three predictor values:</p>
+<p><span class="math display">\[
+x=(-1,0,1)
+\]</span></p>
+<p>The raw quadratic basis produces:</p>
+<p><span class="math display">\[
+X=
+\begin{bmatrix}
+1&amp;-1&amp;1\\
+1&amp;0&amp;0\\
+1&amp;1&amp;1
+\end{bmatrix}
+\]</span></p>
+<p>The first and third columns are not orthogonal because:</p>
+<p><span class="math display">\[
+(1)(1)+(1)(0)+(1)(1)=2
+\]</span></p>
+<p>To construct an orthogonal quadratic basis function, we need to modify <span class="math inline">\(x^2\)</span> so that its dot product with the constant column <span class="math inline">\((1,1,1)\)</span> equals zero.</p>
+<p>Suppose we subtract an unknown constant <span class="math inline">\(c\)</span> from <span class="math inline">\(x^2\)</span>:</p>
+<p><span class="math display">\[
+q_2(x)=x^2-c
+\]</span></p>
+<p>We determine <span class="math inline">\(c\)</span> by requiring orthogonality to the constant column:</p>
+<p><span class="math display">\[
+(1)(1-c)+(1)(0-c)+(1)(1-c)=0
+\]</span></p>
+<p>Simplifying:</p>
+<p><span class="math display">\[
+2-3c=0
+\quad\Rightarrow\quad
+c=\frac{2}{3}
+\]</span></p>
+<p>Notice that <span class="math inline">\(2/3\)</span> is also the mean of the squared predictor values:</p>
+<p><span class="math display">\[
+\frac{1+0+1}{3}=\frac{2}{3}
+\]</span></p>
+<p>Therefore, our new quadratic basis function is:</p>
+<p><span class="math display">\[
+q_2(x)=x^2-\frac{2}{3}
+\]</span></p>
+<p>Subtracting this constant makes the quadratic column orthogonal to the intercept. Because our predictor values <span class="math inline">\((-1,0,1)\)</span> are symmetric around zero, the resulting column is also orthogonal to the linear term <span class="math inline">\(x\)</span>.</p>
+<p>For a general dataset, additional adjustments may be required to achieve orthogonality with both terms.</p>
+<p>This produces the new column:</p>
+<p><span class="math display">\[
+q_2=
+\begin{bmatrix}
+1/3\\
+-2/3\\
+1/3
+\end{bmatrix}
+\]</span></p>
+<p>Its dot product with the constant column is:</p>
+<p><span class="math display">\[
+(1)(1/3)+(1)(-2/3)+(1)(1/3)=0
+\]</span></p>
+<p>Its dot product with the linear column is also zero:</p>
+<p><span class="math display">\[
+(-1)(1/3)+(0)(-2/3)+(1)(1/3)=0
+\]</span></p>
+<p>Therefore, the three functions</p>
+<p><span class="math display">\[
+1,\quad x,\quad x^2-\frac{2}{3}
+\]</span></p>
+<p>form an orthogonal basis for this particular set of observations.</p>
+<p>The adjustments required to construct orthogonal polynomials depend on the observed predictor values.</p>
+<p>A common mathematical procedure for constructing orthogonal bases is <strong>Gram–Schmidt orthogonalization</strong>, which progressively removes the components of each vector that overlap with previously constructed vectors. This produces mutually orthogonal basis functions while preserving the same polynomial function space.</p>
+<p>In R, <code>poly()</code> performs the orthogonal polynomial construction automatically, so these adjustments do not need to be calculated manually.</p>
+</section>
+<section id="regression-using-orthogonal-polynomials" class="level4" data-number="5.5.1.2">
+<h4 data-number="5.5.1.2" class="anchored" data-anchor-id="regression-using-orthogonal-polynomials"><span class="header-section-number">5.5.1.2</span> Regression Using Orthogonal Polynomials</h4>
+<p>For a polynomial of degree <span class="math inline">\(d\)</span>, the model can be written as:</p>
+<p><span class="math display">\[
+E[Y\mid x]
+=
+\alpha_0+\sum_{k=1}^{d}\alpha_kq_k(x)
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(q_k(x)\)</span> represents an orthogonal polynomial basis function.</li>
+<li><span class="math inline">\(\alpha_k\)</span> is its corresponding regression coefficient.</li>
+<li><span class="math inline">\(d\)</span> is the polynomial degree.</li>
+</ul>
+<p>The orthogonal basis spans the same polynomial function space as the raw basis of equal degree.</p>
+<p>Therefore, changing from raw to orthogonal polynomials does not change the set of relationships that the model can represent.</p>
+<p>Importantly, orthogonality is defined with respect to the predictor values used to construct the basis. The same columns are not necessarily orthogonal when evaluated on a different dataset.</p>
+</section>
+</section>
+<section id="r-implementation-2" class="level3" data-number="5.5.2">
+<h3 data-number="5.5.2" class="anchored" data-anchor-id="r-implementation-2"><span class="header-section-number">5.5.2</span> R Implementation</h3>
+<p>We use the same simulated age and muscle-strength dataset as in the previous sections.</p>
+<p>R constructs orthogonal polynomial bases automatically using <code>poly()</code> when <code>raw = TRUE</code> is not specified.</p>
+<section id="constructing-and-visualizing-the-basis" class="level4" data-number="5.5.2.1">
+<h4 data-number="5.5.2.1" class="anchored" data-anchor-id="constructing-and-visualizing-the-basis"><span class="header-section-number">5.5.2.1</span> Constructing and Visualizing the Basis</h4>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Construct orthogonal polynomial basis</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>orth_basis <span class="ot">&lt;-</span> <span class="fu">poly</span>(sim<span class="sc">$</span>age_scaled, <span class="at">degree =</span> <span class="dv">3</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate predictor values for visualization</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>t_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Evaluate the basis using the training transformation</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>orth_grid <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  orth_basis,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> t_grid</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the three nonconstant basis functions</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  t_grid, orth_grid,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="dv">2</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"darkorange"</span>,</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>          <span class="st">"forestgreen"</span>),</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Scaled predictor (t)"</span>,</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Basis function value"</span>,</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"Orthogonal Polynomial Basis"</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>  <span class="st">"topright"</span>,</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"q1"</span>, <span class="st">"q2"</span>, <span class="st">"q3"</span>),</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"darkorange"</span>,</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>          <span class="st">"forestgreen"</span>),</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">bty =</span> <span class="st">"n"</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="05-polynomial-regression_files/figure-html/orthogonal-basis-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Orthogonal polynomial basis functions of degree 3.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The orthogonal basis functions have different shapes and scales from the raw and Bernstein bases.</p>
+<p>Unlike the Bernstein basis, orthogonal functions can take both positive and negative values.</p>
+<p>Their defining characteristic is not their visual appearance but the orthogonality of their evaluated columns across the training observations.</p>
+</section>
+<section id="verifying-orthogonality" class="level4" data-number="5.5.2.2">
+<h4 data-number="5.5.2.2" class="anchored" data-anchor-id="verifying-orthogonality"><span class="header-section-number">5.5.2.2</span> Verifying Orthogonality</h4>
+<p>We can verify the defining mathematical property using matrix multiplication.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the cross-product matrix</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>Q_cross <span class="ot">&lt;-</span> <span class="fu">crossprod</span>(orth_basis)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a clean formatted table</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>orth_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Basis =</span> <span class="fu">c</span>(<span class="st">"q1"</span>, <span class="st">"q2"</span>, <span class="st">"q3"</span>),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">q1 =</span> <span class="fu">round</span>(Q_cross[, <span class="dv">1</span>], <span class="dv">6</span>),</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">q2 =</span> <span class="fu">round</span>(Q_cross[, <span class="dv">2</span>], <span class="dv">6</span>),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">q3 =</span> <span class="fu">round</span>(Q_cross[, <span class="dv">3</span>], <span class="dv">6</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the orthogonality matrix</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  orth_table,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Orthogonality Check: Cross-Product Matrix"</span>,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>)</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Orthogonality Check: Cross-Product Matrix</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Basis</th>
+<th style="text-align: right;">q1</th>
+<th style="text-align: right;">q2</th>
+<th style="text-align: right;">q3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">q1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">q2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">q3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The <code>crossprod()</code> function calculates <span class="math inline">\(Q^\top Q\)</span>, where <span class="math inline">\(Q\)</span> contains the orthogonal polynomial basis columns.</p>
+<p>The resulting matrix has ones on the diagonal and zeros elsewhere (up to numerical precision), confirming that the basis columns are <strong>orthonormal</strong>:</p>
+<ul>
+<li><strong>Diagonal values of 1:</strong> Each basis column has unit length.</li>
+<li><strong>Off-diagonal values of 0:</strong> Different basis columns are orthogonal, meaning their dot product equals zero.</li>
+</ul>
+<p>This demonstrates the defining mathematical property of orthogonal polynomials.</p>
+</section>
+<section id="fitting-the-orthogonal-polynomial-model" class="level4" data-number="5.5.2.3">
+<h4 data-number="5.5.2.3" class="anchored" data-anchor-id="fitting-the-orthogonal-polynomial-model"><span class="header-section-number">5.5.2.3</span> Fitting the Orthogonal Polynomial Model</h4>
+<p>We now fit a cubic polynomial regression model.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit a cubic orthogonal polynomial regression</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>orth_fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  strength <span class="sc">~</span> <span class="fu">poly</span>(age_scaled, <span class="dv">3</span>),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> sim</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract coefficient statistics</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>coef_stats_orth <span class="ot">&lt;-</span> <span class="fu">summary</span>(orth_fit)<span class="sc">$</span>coefficients</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a formatted coefficient table</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>orth_coef_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Term =</span> <span class="fu">c</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Intercept"</span>,</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Orthogonal polynomial (q1)"</span>,</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Orthogonal polynomial (q2)"</span>,</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Orthogonal polynomial (q3)"</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">round</span>(coef_stats_orth[, <span class="st">"Estimate"</span>], <span class="dv">2</span>),</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(coef_stats_orth[, <span class="st">"Std. Error"</span>], <span class="dv">2</span>),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">p-value</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">ifelse</span>(</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    coef_stats_orth[, <span class="st">"Pr(&gt;|t|)"</span>] <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"&lt; 0.001"</span>,</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sprintf</span>(<span class="st">"%.3f"</span>, coef_stats_orth[, <span class="st">"Pr(&gt;|t|)"</span>])</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the formatted table</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>  orth_coef_table,</span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Cubic Orthogonal Polynomial Regression Coefficients"</span>,</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>)</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Cubic Orthogonal Polynomial Regression Coefficients</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Std. Error</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">224.67</td>
+<td style="text-align: right;">1.24</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Orthogonal polynomial (q1)</td>
+<td style="text-align: right;">-315.13</td>
+<td style="text-align: right;">15.24</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Orthogonal polynomial (q2)</td>
+<td style="text-align: right;">-213.49</td>
+<td style="text-align: right;">15.24</td>
+<td style="text-align: right;">&lt; 0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Orthogonal polynomial (q3)</td>
+<td style="text-align: right;">8.39</td>
+<td style="text-align: right;">15.24</td>
+<td style="text-align: right;">0.583</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The model includes three orthogonal polynomial predictors and an intercept.</p>
+</section>
+<section id="comparing-orthogonal-and-raw-polynomials" class="level4" data-number="5.5.2.4">
+<h4 data-number="5.5.2.4" class="anchored" data-anchor-id="comparing-orthogonal-and-raw-polynomials"><span class="header-section-number">5.5.2.4</span> Comparing Orthogonal and Raw Polynomials</h4>
+<p>We can verify whether the two approaches produce equivalent fitted values.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate maximum absolute difference between</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># raw and orthogonal polynomial predictions</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>max_difference_orth <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">abs</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fitted</span>(raw_fit) <span class="sc">-</span> <span class="fu">fitted</span>(orth_fit)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Display a reader-friendly result</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Maximum difference between predictions:"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ifelse</span>(</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    max_difference_orth <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"&lt; 0.001 Nm"</span>,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste0</span>(<span class="fu">round</span>(max_difference_orth, <span class="dv">3</span>), <span class="st">" Nm"</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Maximum difference between predictions: &lt; 0.001 Nm</code></pre>
+</div>
+</div>
+<p>The maximum absolute difference in fitted values is approximately zero, confirming that raw and orthogonal polynomial regression produce equivalent predictions up to numerical precision.</p>
+<p>Although their coefficients differ, both approaches represent the same cubic polynomial function space. Orthogonalization changes the mathematical representation and improves numerical conditioning without changing the fitted relationship.</p>
+</section>
+</section>
+<section id="code-explanation-and-interpretation-2" class="level3" data-number="5.5.3">
+<h3 data-number="5.5.3" class="anchored" data-anchor-id="code-explanation-and-interpretation-2"><span class="header-section-number">5.5.3</span> Code Explanation and Interpretation</h3>
+<p><strong>1. Constructing the orthogonal basis</strong></p>
+<p>The command <code>poly(sim$age_scaled, degree = 3)</code> generates three nonconstant orthogonal polynomial columns.</p>
+<p>Unlike raw polynomials, the resulting columns are constructed so that their pairwise dot products equal zero, within numerical precision.</p>
+<p>The <code>predict()</code> function evaluates the same basis transformation at new predictor values, preserving the scaling and normalization established from the training data.</p>
+<p><strong>2. Verifying orthogonality</strong></p>
+<p>The command <code>crossprod(orth_basis)</code> calculates the dot products between every pair of basis columns.</p>
+<p>Because the columns are orthonormal, the resulting matrix is approximately an identity matrix, with ones on the diagonal and zeros elsewhere.</p>
+<p>The <code>knitr::kable()</code> function presents these results in a formatted table, making the orthogonality property easier to visualize.</p>
+<p><strong>3. Estimating the model</strong></p>
+<p>The <code>lm()</code> function estimates the regression coefficients using ordinary least squares.</p>
+<p>The formula <code>poly(age_scaled, 3)</code> uses orthogonal polynomials by default, whereas <code>poly(age_scaled, 3, raw = TRUE)</code> uses ordinary polynomial powers.</p>
+<p>Both construct cubic polynomial models.</p>
+<p>The command <code>summary(orth_fit)$coefficients</code> extracts the coefficient estimates and their associated statistics, which are organized using <code>data.frame()</code> and displayed using <code>knitr::kable()</code>.</p>
+<p><strong>4. Comparing fitted values</strong></p>
+<p>The <code>fitted()</code> function extracts the predicted values for each observation.</p>
+<p>The expression <code>max(abs(...))</code> calculates the maximum absolute difference between the raw and orthogonal polynomial predictions.</p>
+<p>A difference smaller than 0.001 Nm confirms that the two models produce practically identical fitted values.</p>
+<section id="interpretation" class="level4" data-number="5.5.3.1">
+<h4 data-number="5.5.3.1" class="anchored" data-anchor-id="interpretation"><span class="header-section-number">5.5.3.1</span> Interpretation</h4>
+<p>Orthogonal polynomial coefficients represent contributions associated with the orthogonal basis functions rather than directly corresponding to the original linear, quadratic, and cubic powers.</p>
+<p>Consequently, individual coefficients are generally less intuitive to interpret than those from a raw polynomial model.</p>
+<p>However, the fitted relationship and its predictions remain interpretable in the original predictor and outcome units.</p>
+<p>Orthogonality also reduces numerical dependence between polynomial terms, improving the conditioning of the regression problem.</p>
+<p>It does not, by itself, prevent overfitting or improve predictive accuracy. Polynomial degree, sample size, and model validation remain important considerations.</p>
+<p>Thus, orthogonal polynomials are primarily useful as an alternative numerical representation of polynomial regression, particularly when higher-degree polynomial terms would otherwise create substantial numerical instability.</p>
+</section>
+</section>
+</section>
+<section id="comparison-of-polynomial-bases" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="comparison-of-polynomial-bases"><span class="header-section-number">5.6</span> Comparison of Polynomial Bases</h2>
+<p>Natural, Bernstein, and orthogonal polynomials provide different mathematical representations of the same polynomial function space.</p>
+<p>For a fixed polynomial degree, each basis can represent the same set of polynomial relationships. However, the basis functions differ in their mathematical properties, coefficient interpretation, and numerical behavior.</p>
+<section id="comparison-of-the-three-approaches" class="level3" data-number="5.6.1">
+<h3 data-number="5.6.1" class="anchored" data-anchor-id="comparison-of-the-three-approaches"><span class="header-section-number">5.6.1</span> Comparison of the Three Approaches</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Natural (Raw)</th>
+<th>Bernstein</th>
+<th>Orthogonal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Basis construction</strong></td>
+<td>Successive powers: <span class="math inline">\(1,x,x^2,\ldots\)</span></td>
+<td>Binomial basis functions</td>
+<td>Orthogonalized polynomial functions</td>
+</tr>
+<tr class="even">
+<td><strong>Main advantage</strong></td>
+<td>Simple mathematical formulation and implementation</td>
+<td>Nonnegative basis functions that sum to one on <span class="math inline">\([0,1]\)</span></td>
+<td>Reduces numerical dependence between polynomial terms</td>
+</tr>
+<tr class="odd">
+<td><strong>Main limitation</strong></td>
+<td>Higher powers may produce multicollinearity and numerical instability</td>
+<td>Requires a specified interval; coefficients are less familiar</td>
+<td>Coefficients are less directly interpretable</td>
+</tr>
+<tr class="even">
+<td><strong>Coefficient interpretation</strong></td>
+<td>Coefficients of individual polynomial powers</td>
+<td>Weights associated with Bernstein basis functions</td>
+<td>Coefficients associated with orthogonal polynomial components</td>
+</tr>
+<tr class="odd">
+<td><strong>When useful</strong></td>
+<td>Low-degree models and straightforward polynomial representation</td>
+<td>Shape-constrained modeling and polynomial approximation on bounded intervals</td>
+<td>Higher-degree polynomial regression when numerical conditioning is a concern</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note on statistical inference:</strong> Although the three bases produce identical fitted values, their individual coefficients represent different mathematical quantities. Consequently, coefficient-level p-values test different hypotheses and should not be directly compared across bases as measures of model performance. Model equivalence is demonstrated through their fitted predictions.</p>
+<p>The choice of basis therefore depends primarily on the desired mathematical properties and numerical behavior, rather than on differences in the polynomial functions that can be represented.</p>
+</section>
+<section id="comparing-fitted-relationships" class="level3" data-number="5.6.2">
+<h3 data-number="5.6.2" class="anchored" data-anchor-id="comparing-fitted-relationships"><span class="header-section-number">5.6.2</span> Comparing Fitted Relationships</h3>
+<p>We can demonstrate the equivalence of the three approaches by visualizing their predictions using the same simulated dataset and polynomial degree.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a common prediction grid</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>pred_grid <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_scaled =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">300</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert scaled age back to years</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>pred_grid<span class="sc">$</span>age <span class="ot">&lt;-</span> <span class="dv">20</span> <span class="sc">+</span> <span class="dv">60</span> <span class="sc">*</span> pred_grid<span class="sc">$</span>age_scaled</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate predictions from all three models</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>pred_grid<span class="sc">$</span>raw <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  raw_fit, <span class="at">newdata =</span> pred_grid</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>pred_grid<span class="sc">$</span>bernstein <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  bern_fit,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> <span class="fu">as.data.frame</span>(</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bern_basis</span>(pred_grid<span class="sc">$</span>age_scaled, <span class="at">degree =</span> <span class="dv">3</span>)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>pred_grid<span class="sc">$</span>orthogonal <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>  orth_fit, <span class="at">newdata =</span> pred_grid</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the maximum difference across models</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>max_diff <span class="ot">&lt;-</span> <span class="fu">max</span>(</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abs</span>(pred_grid<span class="sc">$</span>raw <span class="sc">-</span> pred_grid<span class="sc">$</span>bernstein),</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abs</span>(pred_grid<span class="sc">$</span>raw <span class="sc">-</span> pred_grid<span class="sc">$</span>orthogonal),</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abs</span>(pred_grid<span class="sc">$</span>bernstein <span class="sc">-</span> pred_grid<span class="sc">$</span>orthogonal)</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a publication-style figure</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(sim, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> strength)) <span class="sc">+</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"#94A3B8"</span>,</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.55</span>,</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="fl">1.9</span></span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> pred_grid,</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> raw),</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"#2563EB"</span>,</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">1.3</span></span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">20</span>, <span class="dv">80</span>, <span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Polynomial Regression: Equivalent Fits"</span>,</span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Natural, Bernstein, and orthogonal bases produce the same curve"</span>,</span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Age (years)"</span>,</span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Simulated peak torque (Nm)"</span>,</span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="fu">paste0</span>(</span>
+<span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Maximum difference between predictions: "</span>,</span>
+<span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a>      <span class="fu">ifelse</span>(max_diff <span class="sc">&lt;</span> <span class="fl">0.001</span>, <span class="st">"&lt; 0.001"</span>,</span>
+<span id="cb18-61"><a href="#cb18-61" aria-hidden="true" tabindex="-1"></a>             <span class="fu">sprintf</span>(<span class="st">"%.3f"</span>, max_diff)),</span>
+<span id="cb18-62"><a href="#cb18-62" aria-hidden="true" tabindex="-1"></a>      <span class="st">" Nm | Simulated data"</span></span>
+<span id="cb18-63"><a href="#cb18-63" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-64"><a href="#cb18-64" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-65"><a href="#cb18-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-66"><a href="#cb18-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb18-67"><a href="#cb18-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-68"><a href="#cb18-68" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">15</span>),</span>
+<span id="cb18-70"><a href="#cb18-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>, <span class="at">color =</span> <span class="st">"gray40"</span>),</span>
+<span id="cb18-71"><a href="#cb18-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.caption =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">9</span>, <span class="at">color =</span> <span class="st">"gray45"</span>),</span>
+<span id="cb18-72"><a href="#cb18-72" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb18-73"><a href="#cb18-73" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.minor =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb18-74"><a href="#cb18-74" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.major.x =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb18-75"><a href="#cb18-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title.position =</span> <span class="st">"plot"</span></span>
+<span id="cb18-76"><a href="#cb18-76" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="05-polynomial-regression_files/figure-html/polynomial-comparison-1.png" class="img-fluid figure-img" width="768"></p>
+<figcaption>Comparison of cubic polynomial regression using natural, Bernstein, and orthogonal bases. All three produce equivalent fitted curves.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Code explanation</strong></p>
+<p>The three polynomial models are evaluated on an identical sequence of scaled age values, ensuring a direct comparison.</p>
+<ul>
+<li><code>predict()</code> generates fitted muscle-strength values from each model.</li>
+<li><code>bern_basis()</code> constructs the Bernstein basis functions for the prediction grid.</li>
+<li><code>geom_point()</code> displays the observed simulated data.</li>
+<li><code>geom_line()</code> displays the common fitted relationship using predictions from the raw polynomial model.</li>
+<li><code>max(abs(...))</code> calculates the maximum absolute difference between predictions across all three models.</li>
+<li><code>ggplot2</code> provides a consistent, publication-style visualization.</li>
+</ul>
+<p>Because all three models produce equivalent fitted values, only one curve is displayed to avoid redundant overlapping lines.</p>
+<p>The maximum prediction difference is reported in the figure caption, providing numerical confirmation of their equivalence.</p>
+<p>This demonstrates that <strong>changing the polynomial basis alters the coefficient representation but not the fitted relationship</strong>, when the polynomial degree and estimation conditions are identical.</p>
+</section>
+</section>
+<section id="practical-considerations" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="practical-considerations"><span class="header-section-number">5.7</span> Practical Considerations</h2>
+<p>Although polynomial regression is flexible, several considerations influence its use in statistical modeling.</p>
+<section id="selecting-polynomial-degree" class="level3" data-number="5.7.1">
+<h3 data-number="5.7.1" class="anchored" data-anchor-id="selecting-polynomial-degree"><span class="header-section-number">5.7.1</span> Selecting Polynomial Degree</h3>
+<p>The degree of a polynomial determines its complexity.</p>
+<p>A degree-1 polynomial represents a straight line, whereas higher degrees allow increasingly flexible relationships.</p>
+<p>However, increasing the polynomial degree also increases the number of estimated coefficients and may introduce unnecessary complexity.</p>
+<p>A polynomial with insufficient flexibility may underfit the relationship, whereas an excessively flexible polynomial may overfit random variation in the training data.</p>
+<p>Polynomial degree should therefore be guided by scientific knowledge, diagnostic assessment, and predictive validation, such as cross-validation, when prediction is the objective.</p>
+</section>
+<section id="numerical-stability" class="level3" data-number="5.7.2">
+<h3 data-number="5.7.2" class="anchored" data-anchor-id="numerical-stability"><span class="header-section-number">5.7.2</span> Numerical Stability</h3>
+<p>Higher-order raw polynomial terms can become strongly correlated, especially when the predictor spans a wide numerical range.</p>
+<p>This can produce an ill-conditioned design matrix and reduce the numerical reliability of coefficient estimation.</p>
+<p>Scaling predictors and using alternative bases, particularly orthogonal polynomials, can help address numerical conditioning.</p>
+<p>However, improving numerical conditioning does not necessarily improve out-of-sample predictive performance.</p>
+</section>
+<section id="extrapolation" class="level3" data-number="5.7.3">
+<h3 data-number="5.7.3" class="anchored" data-anchor-id="extrapolation"><span class="header-section-number">5.7.3</span> Extrapolation</h3>
+<p>Polynomial models can behave unpredictably outside the observed predictor range.</p>
+<p>Even a polynomial that fits the training data well may produce unrealistic predictions when extrapolated beyond the values used for estimation.</p>
+<p>For example, a polynomial fitted to muscle strength between ages 20 and 80 should not automatically be assumed to describe strength at ages outside that range.</p>
+<p>Predictions should therefore be interpreted primarily within the domain supported by the observed data.</p>
+</section>
+<section id="interpretation-and-scientific-relevance" class="level3" data-number="5.7.4">
+<h3 data-number="5.7.4" class="anchored" data-anchor-id="interpretation-and-scientific-relevance"><span class="header-section-number">5.7.4</span> Interpretation and Scientific Relevance</h3>
+<p>Polynomial regression describes the shape of a statistical association but does not, by itself, establish a causal relationship.</p>
+<p>Furthermore, individual polynomial coefficients may be difficult to interpret, especially when several powers of the same predictor are included.</p>
+<p>Consequently, interpretation should emphasize the overall fitted relationship, changes in predicted outcomes across meaningful predictor values, and uncertainty in the estimates.</p>
+</section>
+</section>
+<section id="key-takeaways" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="key-takeaways"><span class="header-section-number">5.8</span> Key Takeaways</h2>
+<p>Polynomial regression extends the flexibility of linear regression through basis expansion, allowing nonlinear relationships to be modeled while retaining linearity in the regression coefficients.</p>
+<p>Three important polynomial representations were examined:</p>
+<ol type="1">
+<li><p><strong>Natural (raw) polynomials</strong> use successive powers of the predictor and provide a straightforward mathematical representation of nonlinear relationships.</p></li>
+<li><p><strong>Bernstein polynomials</strong> use a binomial-based basis with nonnegative functions that sum to one, making them particularly useful for modeling on bounded intervals and implementing shape constraints.</p></li>
+<li><p><strong>Orthogonal polynomials</strong> construct mutually orthogonal basis columns, improving numerical conditioning and reducing numerical dependence between polynomial terms.</p></li>
+</ol>
+<p>For a fixed polynomial degree, all three bases span the same polynomial space and produce equivalent fitted values under ordinary least squares, provided the design matrices have full column rank and no additional constraints or penalties are imposed.</p>
+<p>The main distinction is therefore not the range of curves each basis can represent, but <strong>how those curves are constructed, estimated, and interpreted</strong>.</p>
+<p>Ultimately, the choice of polynomial degree determines model flexibility, while the choice of polynomial basis determines the mathematical and numerical representation of that flexibility.</p>
+</section>
+<section id="ai-acknowledgment" class="level2" data-number="5.9">
+<h2 data-number="5.9" class="anchored" data-anchor-id="ai-acknowledgment"><span class="header-section-number">5.9</span> AI Acknowledgment</h2>
+<p>OpenAI ChatGPT was used during the development of this tutorial to support conceptual understanding, code development, and feedback on clarity and wording. The final analysis, interpretation, code, and written content were reviewed and understood by the author.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./04-random-forests.html" class="pagination-link" aria-label="Random Forests">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Random Forests</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

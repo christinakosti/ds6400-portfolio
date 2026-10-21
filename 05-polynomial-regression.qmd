@@ -1,0 +1,1327 @@
+---
+title: "Polynomial Regression: Natural, Bernstein and Orthogonal Bases"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## Introduction
+
+Linear regression is one of the most widely used statistical methods for modeling relationships between variables. In its simplest form, it assumes that the expected outcome changes at a constant rate with respect to a predictor:
+
+$$
+E[Y \mid x] = \beta_0 + \beta_1 x
+$$
+
+where:
+
+-   $Y$ is the outcome variable.
+-   $x$ is the predictor.
+-   $\beta_0$ is the intercept.
+-   $\beta_1$ is the regression coefficient representing the constant slope.
+
+However, many relationships in biological, physical and social sciences are nonlinear. For example, muscle strength may increase during early adulthood, plateau and then decline with advancing age. A straight line may fail to capture such changes in slope.
+
+**Polynomial regression** addresses this limitation by incorporating powers of the predictor into the regression model.
+
+A quadratic model can be written as:
+
+$$
+E[Y \mid x] = \beta_0 + \beta_1 x + \beta_2 x^2
+$$
+
+Adding the squared term allows the fitted relationship to curve rather than follow a straight line.
+
+Importantly, polynomial regression remains a **linear model in its coefficients**, even though the relationship between the predictor and outcome is nonlinear.
+
+This distinction is important: linearity in regression refers to how the coefficients enter the model, not necessarily to the shape of the relationship between variables.
+
+### Example Dataset
+
+Throughout this chapter, we use a simulated dataset describing the relationship between age and isokinetic muscle strength.
+
+The data are generated from a nonlinear function with added random noise. This allows us to compare how different polynomial representations recover the same underlying relationship.
+
+The dataset is entirely simulated and is intended for methodological illustration rather than physiological inference.
+
+```{r}
+#| label: simulate-data
+#| fig-cap: "Simulated relationship between age and muscle strength."
+
+set.seed(2026)
+
+# Number of observations
+n <- 150
+
+# Simulate participant ages
+sim <- data.frame(
+  age = runif(n, min = 20, max = 80)
+)
+
+# Generate a nonlinear strength relationship
+sim$strength <- 250 -
+  0.06 * (sim$age - 35)^2 +
+  rnorm(n, mean = 0, sd = 15)
+
+# Scale age to the interval [0, 1]
+sim$age_scaled <- (sim$age - 20) / (80 - 20)
+
+# Inspect the first observations
+head(sim)
+
+# Visualize the data
+plot(
+  sim$age,
+  sim$strength,
+  pch = 19,
+  col = adjustcolor("steelblue", alpha.f = 0.5),
+  xlab = "Age (years)",
+  ylab = "Simulated peak torque (Nm)",
+  main = "Age and Muscle Strength"
+)
+```
+
+**Code explanation**
+
+-   `set.seed(2026)` ensures that the same random dataset is generated whenever the code is executed.
+-   `runif()` generates 150 ages uniformly distributed between 20 and 80 years.
+-   The quadratic function generates a nonlinear relationship between age and strength.
+-   `rnorm()` introduces random normally distributed variation around the underlying relationship.
+-   `age_scaled` transforms age to a 0–1 scale, which will be useful when constructing Bernstein polynomial basis functions.
+-   `plot()` displays the observed relationship before fitting any regression model.
+
+### Linear Versus Polynomial Regression
+
+To illustrate the motivation for polynomial regression, we compare a conventional linear model with a cubic polynomial model.
+
+```{r}
+#| label: linear-vs-polynomial
+#| fig-cap: "Comparison of linear and cubic polynomial regression."
+
+# Fit a conventional linear model
+linear_fit <- lm(
+  strength ~ age,
+  data = sim
+)
+
+# Fit a cubic polynomial model
+poly_fit <- lm(
+  strength ~ poly(age, 3, raw = TRUE),
+  data = sim
+)
+
+# Generate a sequence of ages for predictions
+age_grid <- data.frame(
+  age = seq(20, 80, length.out = 300)
+)
+
+# Plot observed data
+plot(
+  sim$age,
+  sim$strength,
+  pch = 19,
+  col = adjustcolor("gray40", alpha.f = 0.4),
+  xlab = "Age (years)",
+  ylab = "Simulated peak torque (Nm)",
+  main = "Linear vs. Polynomial Regression"
+)
+
+# Add model predictions
+lines(
+  age_grid$age,
+  predict(linear_fit, newdata = age_grid),
+  col = "steelblue",
+  lwd = 3
+)
+
+lines(
+  age_grid$age,
+  predict(poly_fit, newdata = age_grid),
+  col = "darkorange",
+  lwd = 3
+)
+
+legend(
+  "topright",
+  legend = c("Linear", "Cubic polynomial"),
+  col = c("steelblue", "darkorange"),
+  lwd = 3,
+  bty = "n"
+)
+```
+
+**Interpretation**
+
+The linear regression model estimates a constant change in predicted muscle strength per one-year increase in age.
+
+The cubic polynomial model allows the slope to vary across age, capturing curvature that a straight-line model cannot represent.
+
+This greater flexibility can improve representation of a nonlinear relationship. However, increasing flexibility does not necessarily improve generalization to new observations. Polynomial degree must therefore be selected carefully.
+
+### Applied Research Example: Muscle Strength Assessment
+
+Polynomial fitting has practical applications in exercise physiology. For example, in my first-author publication (Kosti et al., 2026), we applied third-degree polynomial fitting to hand-held dynamometry measurements to estimate force at standardized knee joint angles. This approach facilitated comparisons of muscle strength across the range of motion between hand-held and isokinetic dynamometry.
+
+The study illustrates how polynomial fitting can support the analysis of nonlinear biomechanical relationships in experimental research.
+
+**Reference:** [Kosti et al. (2026), Journal of Human Kinetics](https://doi.org/10.5114/jhk/210346).
+
+## Basis Expansion: Mathematical Foundation
+
+The mathematical foundation of polynomial regression is **basis expansion**.
+
+A basis is a set of linearly independent functions that can be combined to represent any function within a specified function space.
+
+For example, the functions
+
+$$
+1,\quad x,\quad x^2
+$$
+
+form a basis for all polynomial functions of degree two or less.
+
+Any quadratic polynomial can be expressed as a linear combination of these three functions:
+
+$$
+f(x) = \beta_0(1) + \beta_1(x) + \beta_2(x^2)
+$$
+
+Each function is called a **basis function**, and each coefficient determines its contribution to the resulting curve.
+
+### General Mathematical Formulation
+
+Rather than including only the original predictor $x$, basis expansion transforms it into a set of functions:
+
+$$
+b_0(x), b_1(x), \ldots, b_K(x)
+$$
+
+The resulting regression model is:
+
+$$
+\boxed{
+E[Y \mid x] = \sum_{k=0}^{K} \beta_k b_k(x)
+}
+$$
+
+where:
+
+-   $K+1$ is the number of basis functions.
+-   $b_k(x)$ is the $k$th basis function.
+-   $\beta_k$ is its corresponding regression coefficient.
+-   $b_0(x)=1$ commonly represents the intercept.
+
+The model remains linear in its coefficients because each $\beta_k$ enters only through multiplication by a known basis function.
+
+Different choices of basis functions allow the model to represent different function classes, including polynomial relationships.
+
+### The Design Matrix
+
+For $n$ observations and $K+1$ basis functions, the regression design matrix is:
+
+$$
+X =
+\begin{bmatrix}
+b_0(x_1) & b_1(x_1) & \cdots & b_K(x_1) \\
+b_0(x_2) & b_1(x_2) & \cdots & b_K(x_2) \\
+\vdots & \vdots & \ddots & \vdots \\
+b_0(x_n) & b_1(x_n) & \cdots & b_K(x_n)
+\end{bmatrix}
+$$
+
+Each row represents an observation, and each column represents a basis function evaluated at the observed predictor values.
+
+For a quadratic polynomial with $x = (0, 0.5, 1)$, the raw polynomial design matrix becomes:
+
+$$
+X =
+\begin{bmatrix}
+1 & 0 & 0 \\
+1 & 0.5 & 0.25 \\
+1 & 1 & 1
+\end{bmatrix}
+$$
+
+The columns correspond to $1$, $x$, and $x^2$, respectively.
+
+In matrix notation, the fitted model is:
+
+$$
+\hat{\mathbf{Y}} = X\hat{\boldsymbol{\beta}}
+$$
+
+where $\hat{\mathbf{Y}}$ is the vector of fitted outcomes and $\hat{\boldsymbol{\beta}}$ is the vector of estimated coefficients.
+
+Provided the design matrix has full column rank, ordinary least squares estimates the coefficients as:
+
+$$
+\hat{\boldsymbol{\beta}}
+=
+(X^\top X)^{-1}X^\top\mathbf{Y}
+$$
+
+Thus, polynomial regression does not require a fundamentally different estimation procedure. It changes the design matrix by introducing transformed predictors.
+
+### Why Different Polynomial Bases?
+
+A polynomial function can be represented using different sets of basis functions.
+
+Three important approaches are:
+
+1.  **Natural (raw) polynomials:** use powers of the predictor, such as $1$, $x$, $x^2$, and $x^3$.
+2.  **Bernstein polynomials:** express polynomial functions using a binomial-based basis, typically defined over a bounded interval.
+3.  **Orthogonal polynomials:** construct basis functions whose evaluated columns are mutually orthogonal, improving numerical stability.
+
+For a fixed polynomial degree, each of these approaches spans the same polynomial function space.
+
+Consequently, when fitted using ordinary least squares without additional constraints or penalties, and with full-rank design matrices, they produce identical fitted values up to numerical precision.
+
+Their differences concern **how the polynomial is represented, the interpretation of its coefficients, and its numerical properties**.
+
+The following sections examine each representation mathematically and computationally.
+
+## Natural (Raw) Polynomials
+
+Natural, or raw, polynomials model nonlinear relationships using successive powers of a predictor. They provide the most straightforward polynomial basis and serve as a reference for understanding alternative representations.
+
+### Mathematical Formulation
+
+For a polynomial of degree $d$, the raw basis functions are:
+
+$$
+b_k(x)=x^k,\qquad k=0,1,\ldots,d
+$$
+
+The resulting regression model is:
+
+$$
+E[Y\mid x]=\sum_{k=0}^{d}\beta_kx^k
+$$
+
+For a cubic polynomial ($d=3$):
+
+$$
+E[Y\mid x]=\beta_0+\beta_1x+\beta_2x^2+\beta_3x^3
+$$
+
+The basis consists of four functions: $1$, $x$, $x^2$, and $x^3$. Their coefficients determine the shape of the fitted relationship.
+
+Unlike simple linear regression, the slope of a polynomial model can change across the predictor's range. For a cubic polynomial, differentiating with respect to $x$ gives:
+
+$$
+\frac{dE[Y\mid x]}{dx}
+=\beta_1+2\beta_2x+3\beta_3x^2
+$$
+
+Thus, the rate of change in the expected outcome depends on $x$, allowing the model to represent curvature.
+
+### R Implementation
+
+We use the simulated age and muscle-strength dataset introduced in Section 1.
+
+For visualization and numerical convenience, age is scaled to the interval $[0,1]$:
+
+$$
+t=\frac{\text{Age}-20}{60}
+$$
+
+Here, $t$ represents scaled age, where 0 corresponds to 20 years and 1 corresponds to 80 years. This transformation was already applied when creating `sim$age_scaled`.
+
+First, we visualize the four basis functions of a cubic polynomial.
+
+```{r}
+#| label: raw-basis
+#| fig-cap: "Raw polynomial basis functions of degree 3."
+
+# Generate 200 scaled age values between 0 and 1
+t_grid <- seq(0, 1, length.out = 200)
+
+# Construct the raw polynomial basis matrix
+raw_basis <- cbind(
+  "1" = rep(1, length(t_grid)),
+  "t" = t_grid,
+  "t²" = t_grid^2,
+  "t³" = t_grid^3
+)
+
+# Visualize individual basis functions
+matplot(
+  t_grid, raw_basis,
+  type = "l", lty = 1, lwd = 2,
+  col = c("black", "steelblue",
+          "darkorange", "forestgreen"),
+  xlab = "Scaled age (t)",
+  ylab = "Basis function value",
+  main = "Raw Polynomial Basis"
+)
+
+legend(
+  "right",
+  legend = colnames(raw_basis),
+  col = c("black", "steelblue",
+          "darkorange", "forestgreen"),
+  lty = 1, lwd = 2, bty = "n"
+)
+```
+
+The plot illustrates how successive powers of scaled age produce different basis functions. These functions are not separate regression predictions; their weighted combination generates the final fitted curve.
+
+We now fit a cubic polynomial to the simulated data and summarize its estimated coefficients.
+
+```{r}
+#| label: raw-model
+
+# Fit a cubic polynomial regression
+raw_fit <- lm(
+  strength ~ poly(age_scaled, 3, raw = TRUE),
+  data = sim
+)
+
+# Extract estimated coefficients and statistics
+coef_stats <- summary(raw_fit)$coefficients
+
+# Create a formatted coefficient table
+coef_table <- data.frame(
+  Term = c(
+    "Intercept",
+    "Scaled age (t)",
+    "Scaled age squared (t²)",
+    "Scaled age cubed (t³)"
+  ),
+  Estimate = round(coef_stats[, "Estimate"], 2),
+  `Std. Error` = round(coef_stats[, "Std. Error"], 2),
+  `p-value` = ifelse(
+  coef_stats[, "Pr(>|t|)"] < 0.001,
+  "< 0.001",
+  sprintf("%.3f", coef_stats[, "Pr(>|t|)"])
+),
+  check.names = FALSE,
+  row.names = NULL
+)
+
+# Display a clean coefficient table
+knitr::kable(
+  coef_table,
+  caption = "Cubic Raw Polynomial Regression Coefficients",
+  align = c("l", "r", "r", "r")
+)
+```
+
+### Code Explanation and Interpretation
+
+The key components of the implementation are:
+
+-   `poly(age_scaled, 3, raw = TRUE)` constructs the three nonconstant basis functions: $t$, $t^2$, and $t^3$, where $t$ represents scaled age.
+-   `raw = TRUE` specifies ordinary polynomial powers rather than orthogonal polynomials, which are R's default.
+-   `lm()` estimates the coefficients using ordinary least squares and includes an intercept automatically.
+-   `summary(raw_fit)$coefficients` extracts the estimated coefficients, standard errors, test statistics, and p-values.
+-   `data.frame()` organizes the relevant statistics into a table, while `knitr::kable()` formats it for presentation in the HTML document.
+-   `matplot()` visualizes the individual polynomial basis functions.
+
+The estimated model can be expressed as:
+
+$$
+\widehat{\text{Strength}}
+=\hat\beta_0+\hat\beta_1t+\hat\beta_2t^2+\hat\beta_3t^3
+$$
+
+where $t=(\text{Age}-20)/60$.
+
+The intercept represents predicted muscle strength at age 20 ($t=0$).
+
+Because the slope varies with age, the remaining coefficients should be interpreted jointly rather than as independent, constant effects. In particular, $\hat\beta_1$ represents the slope with respect to scaled age at $t=0$, while $\hat\beta_2$ and $\hat\beta_3$ contribute to changes in that slope.
+
+The fitted curve was already visualized in Section 1. The emphasis here is on how the raw polynomial basis constructs that relationship.
+
+## Bernstein Polynomials
+
+Bernstein polynomials provide an alternative representation of polynomial functions. Rather than using successive powers of a predictor directly, they construct basis functions from the binomial expansion.
+
+This reparameterization preserves the flexibility of ordinary polynomial regression while providing useful numerical and mathematical properties.
+
+### Mathematical Formulation
+
+For a polynomial of degree $d$, the Bernstein basis functions are defined as:
+
+$$
+\boxed{
+B_{k,d}(t)=\binom{d}{k}t^k(1-t)^{d-k}
+}
+$$
+
+where:
+
+-   $d$ is the polynomial degree.
+-   $k=0,1,\ldots,d$ identifies the basis function.
+-   $t$ is the predictor scaled to the interval $[0,1]$.
+-   $\binom{d}{k}=\frac{d!}{k!(d-k)!}$ is the binomial coefficient, representing the number of ways to choose $k$ elements from $d$ elements.
+
+For a predictor $x$ defined on the interval $[a,b]$, the scaled variable is:
+
+$$
+t=\frac{x-a}{b-a}
+$$
+
+In our dataset, age ranges from 20 to 80 years, so:
+
+$$
+t=\frac{\text{Age}-20}{60}
+$$
+
+This transformation maps ages 20 and 80 to 0 and 1, respectively, without losing information.
+
+#### Derivation from the Binomial Theorem
+
+The Bernstein basis follows directly from the binomial theorem:
+
+$$
+(a+b)^d=\sum_{k=0}^{d}\binom{d}{k}a^kb^{d-k}
+$$
+
+Substituting $a=t$ and $b=1-t$ gives:
+
+$$
+[t+(1-t)]^d
+=
+\sum_{k=0}^{d}\binom{d}{k}t^k(1-t)^{d-k}
+$$
+
+Since $t+(1-t)=1$, the expression becomes:
+
+$$
+\sum_{k=0}^{d}B_{k,d}(t)=1
+$$
+
+Therefore, the Bernstein basis functions always sum to one.
+
+For a cubic polynomial ($d=3$), the four basis functions are:
+
+$$
+\begin{aligned}
+B_{0,3}(t)&=(1-t)^3\\
+B_{1,3}(t)&=3t(1-t)^2\\
+B_{2,3}(t)&=3t^2(1-t)\\
+B_{3,3}(t)&=t^3
+\end{aligned}
+$$
+
+For example, at $t=0.5$, their values are $0.125$, $0.375$, $0.375$, and $0.125$, which sum to one.
+
+#### Regression Using the Bernstein Basis
+
+A polynomial regression model can be expressed as:
+
+$$
+\boxed{
+E[Y\mid t]=\sum_{k=0}^{d}\alpha_k B_{k,d}(t)
+}
+$$
+
+where:
+
+-   $E[Y\mid t]$ is the expected outcome for a given value of the scaled predictor $t$.
+-   $\sum$ indicates that all terms are added together.
+-   $d$ is the polynomial degree.
+-   $k$ indexes the basis functions, from $0$ to $d$.
+-   $\alpha_k$ is the regression coefficient estimated from the data, determining the contribution of the corresponding basis function.
+-   $B_{k,d}(t)$ is the Bernstein basis function, calculated from the scaled predictor $t$.
+
+For a cubic polynomial ($d=3$), the model becomes:
+
+$$
+E[Y\mid t]=
+\alpha_0B_{0,3}(t)+
+\alpha_1B_{1,3}(t)+
+\alpha_2B_{2,3}(t)+
+\alpha_3B_{3,3}(t)
+$$
+
+Each Bernstein basis function is multiplied by its corresponding regression coefficient. The four products are then summed to obtain the predicted outcome.
+
+Thus, **the basis functions determine the mathematical building blocks, while the estimated coefficients determine how they are combined to form the fitted curve.**
+
+Two important properties follow from this construction:
+
+1.  **Nonnegativity:** $B_{k,d}(t)\geq 0$ for $t\in[0,1]$.
+2.  **Partition of unity:** The basis functions sum to one at every value of $t$.
+
+Consequently, the predicted value is a weighted average of the Bernstein coefficients and lies between their minimum and maximum values within the specified interval.
+
+Although their expressions differ from raw polynomial powers, the Bernstein functions of degree $d$ span the same polynomial space as $1,t,\ldots,t^d$.
+
+Thus, for the same degree, both bases can represent exactly the same polynomial relationships.
+
+### R Implementation
+
+We use the same simulated dataset and cubic polynomial degree as in Section 3.
+
+First, we construct the Bernstein basis functions directly from their mathematical definition.
+
+```{r}
+#| label: bernstein-basis
+#| fig-cap: "Bernstein polynomial basis functions of degree 3."
+
+# Define a function to construct the Bernstein basis
+bern_basis <- function(t, degree = 3) {
+
+  basis <- sapply(0:degree, function(k) {
+    choose(degree, k) *
+      t^k *
+      (1 - t)^(degree - k)
+  })
+
+  colnames(basis) <- paste0("B", 0:degree)
+
+  return(basis)
+}
+
+# Generate predictor values from 0 to 1
+t_grid <- seq(0, 1, length.out = 200)
+
+# Construct cubic Bernstein basis functions
+bern_grid <- bern_basis(t_grid, degree = 3)
+
+# Visualize the basis functions
+matplot(
+  t_grid, bern_grid,
+  type = "l", lty = 1, lwd = 2,
+  col = c("black", "steelblue",
+          "darkorange", "forestgreen"),
+  xlab = "Scaled predictor (t)",
+  ylab = "Basis function value",
+  main = "Bernstein Polynomial Basis"
+)
+
+legend(
+  "topright",
+  legend = colnames(bern_grid),
+  col = c("black", "steelblue",
+          "darkorange", "forestgreen"),
+  lty = 1, lwd = 2, bty = "n"
+)
+```
+
+Unlike raw polynomial powers, the Bernstein basis functions distribute their influence across different regions of the predictor interval.
+
+The first basis function is largest near $t=0$, the last near $t=1$, and the two intermediate functions contribute most strongly within the interval.
+
+We can verify that the basis functions sum to one:
+
+```{r}
+#| label: bernstein-properties
+
+# Verify that the Bernstein basis functions sum to 1
+check <- all(abs(rowSums(bern_grid) - 1) < 1e-10)
+
+cat("All Bernstein basis functions sum to 1:", check)
+```
+
+The result confirms that the Bernstein basis functions sum to one across the predictor interval, up to numerical precision.
+
+#### Fitting the Bernstein Regression Model
+
+We now construct the Bernstein basis for the observed ages and use it as the design matrix in a regression.
+
+```{r}
+#| label: bernstein-model
+
+# Construct the basis for the observed predictor
+bern_train <- as.data.frame(
+  bern_basis(sim$age_scaled, degree = 3)
+)
+
+# Combine basis functions with the outcome
+bern_data <- data.frame(
+  strength = sim$strength,
+  bern_train
+)
+
+# Fit the Bernstein polynomial model
+bern_fit <- lm(
+  strength ~ 0 + B0 + B1 + B2 + B3,
+  data = bern_data
+)
+
+# Extract coefficient statistics
+coef_stats_bern <- summary(bern_fit)$coefficients
+
+# Create a formatted coefficient table
+bern_coef_table <- data.frame(
+  Term = rownames(coef_stats_bern),
+  Estimate = round(coef_stats_bern[, "Estimate"], 2),
+  `Std. Error` = round(coef_stats_bern[, "Std. Error"], 2),
+  `p-value` = ifelse(
+  coef_stats_bern[, "Pr(>|t|)"] < 0.001,
+  "< 0.001",
+  sprintf("%.3f", coef_stats_bern[, "Pr(>|t|)"])
+),
+  check.names = FALSE,
+  row.names = NULL
+)
+
+# Display the formatted table
+knitr::kable(
+  bern_coef_table,
+  caption = "Cubic Bernstein Polynomial Regression Coefficients",
+  align = c("l", "r", "r", "r")
+)
+```
+
+The model includes all four Bernstein basis functions.
+
+The formula contains `0 +` to remove the usual additional intercept because the Bernstein functions already sum to one. Including an intercept alongside all four basis functions would create an exact linear dependency in the design matrix.
+
+#### Comparing Bernstein and Raw Polynomial Predictions
+
+Because both models use degree-3 polynomial bases, they should produce equivalent fitted values.
+
+```{r}
+#| label: bernstein-equivalence
+
+# Calculate maximum absolute difference
+max_difference <- max(abs(
+  fitted(raw_fit) - fitted(bern_fit)
+))
+
+# Display a reader-friendly result
+cat(
+  "Maximum difference between predictions:",
+  ifelse(max_difference < 0.001,
+         "< 0.001 Nm",
+         paste0(round(max_difference, 3), " Nm"))
+)
+```
+
+The maximum absolute difference in fitted values is approximately zero, confirming that the raw and Bernstein polynomial models produce equivalent predictions up to numerical precision.
+
+Although their estimated coefficients differ, both models represent the same cubic polynomial function space. This illustrates that changing the polynomial basis alters the parameterization rather than the fitted relationship.
+
+### Code Explanation and Interpretation
+
+The implementation involves three key steps.
+
+**1. Constructing the Bernstein basis**
+
+The custom function `bern_basis()` implements the mathematical definition directly.
+
+-   `choose(degree, k)` calculates the binomial coefficient.
+-   `t^k` calculates $t^k$, the scaled predictor raised to the power $k$.
+-   `(1-t)^(degree-k)` calculates $(1-t)^{d-k}$, the complementary term of the Bernstein formula.
+-   `sapply()` evaluates the expression for every value of $k$, creating one column per basis function.
+
+This approach makes the mathematical construction explicit rather than relying on a specialized package.
+
+**2. Estimating the model**
+
+The `lm()` function fits the regression using the four Bernstein basis columns.
+
+The expression `0 + B0 + B1 + B2 + B3` includes the complete Bernstein basis without introducing a redundant intercept.
+
+The resulting coefficients describe the contribution of each basis function to the predicted muscle-strength curve.
+
+**3. Verifying equivalence**
+
+The `fitted()` function extracts the predicted values from both polynomial models.
+
+Comparing these values demonstrates that the raw and Bernstein representations produce the same fitted relationship when estimated using ordinary least squares with the same degree and full-rank design matrices.
+
+#### Interpretation of Bernstein Coefficients
+
+Unlike raw polynomial coefficients, Bernstein coefficients describe the combination of basis functions that determines the curve.
+
+For a cubic model:
+
+-   $\alpha_0$ equals the predicted outcome at $t=0$.
+-   $\alpha_3$ equals the predicted outcome at $t=1$.
+-   $\alpha_1$ and $\alpha_2$ influence the curve's behavior between the endpoints.
+
+In our example, the first and last coefficients correspond to predicted strength at ages 20 and 80 years.
+
+The intermediate coefficients are not necessarily predicted values at specific ages. Rather, they help determine the shape of the curve.
+
+Because the basis functions are nonnegative and sum to one, restrictions on the coefficients can also be used to impose useful properties on the fitted relationship, such as monotonicity.
+
+Overall, Bernstein polynomials provide a mathematically structured alternative to raw powers while preserving the same polynomial function space.
+
+## Orthogonal Polynomials
+
+Orthogonal polynomials provide another representation of polynomial regression. Unlike raw polynomial powers, which may be strongly correlated, orthogonal polynomial basis functions are constructed to be mutually orthogonal across the observed predictor values.
+
+This transformation improves numerical stability while preserving the polynomial function space.
+
+### Mathematical Formulation
+
+Two vectors are **orthogonal** when their dot product equals zero.
+
+For two vectors $\mathbf{a}$ and $\mathbf{b}$, the dot product is defined as:
+
+$$
+\mathbf{a}^{\top}\mathbf{b}
+=
+\sum_{i=1}^{n}a_ib_i
+$$
+
+Orthogonality occurs when:
+
+$$
+\mathbf{a}^{\top}\mathbf{b}=0
+$$
+
+In polynomial regression, each basis function produces a column of the design matrix when evaluated at the observed predictor values.
+
+For example, raw quadratic regression uses the basis:
+
+$$
+1,\quad x,\quad x^2
+$$
+
+These columns are generally not orthogonal, because their pairwise dot products may be nonzero.
+
+Orthogonal polynomials construct new basis functions $q_1(x),q_2(x),\ldots,q_d(x)$ whose corresponding columns in the design matrix are mutually orthogonal.
+
+Mathematically, this means:
+
+$$
+\boxed{
+\sum_{i=1}^{n}q_j(x_i)q_k(x_i)=0,
+\qquad j\neq k
+}
+$$
+
+where:
+
+-   $n$ is the number of observations.
+-   $x_i$ is the predictor value for observation $i$.
+-   $q_j(x_i)$ and $q_k(x_i)$ are the values of two different polynomial basis functions evaluated at that observation.
+-   $\sum$ indicates that the products are added across all observations.
+-   $j\neq k$ means we are comparing two different basis functions.
+
+In simpler terms, **the dot product between any two different basis-function columns equals zero**.
+
+This does not mean the individual products must equal zero. Rather, their sum across all training observations must equal zero.
+
+The following numerical example demonstrates how this property can be achieved.
+
+#### A Simple Numerical Example
+
+Consider three predictor values:
+
+$$
+x=(-1,0,1)
+$$
+
+The raw quadratic basis produces:
+
+$$
+X=
+\begin{bmatrix}
+1&-1&1\\
+1&0&0\\
+1&1&1
+\end{bmatrix}
+$$
+
+The first and third columns are not orthogonal because:
+
+$$
+(1)(1)+(1)(0)+(1)(1)=2
+$$
+
+To construct an orthogonal quadratic basis function, we need to modify $x^2$ so that its dot product with the constant column $(1,1,1)$ equals zero.
+
+Suppose we subtract an unknown constant $c$ from $x^2$:
+
+$$
+q_2(x)=x^2-c
+$$
+
+We determine $c$ by requiring orthogonality to the constant column:
+
+$$
+(1)(1-c)+(1)(0-c)+(1)(1-c)=0
+$$
+
+Simplifying:
+
+$$
+2-3c=0
+\quad\Rightarrow\quad
+c=\frac{2}{3}
+$$
+
+Notice that $2/3$ is also the mean of the squared predictor values:
+
+$$
+\frac{1+0+1}{3}=\frac{2}{3}
+$$
+
+Therefore, our new quadratic basis function is:
+
+$$
+q_2(x)=x^2-\frac{2}{3}
+$$
+
+Subtracting this constant makes the quadratic column orthogonal to the intercept. Because our predictor values $(-1,0,1)$ are symmetric around zero, the resulting column is also orthogonal to the linear term $x$.
+
+For a general dataset, additional adjustments may be required to achieve orthogonality with both terms.
+
+This produces the new column:
+
+$$
+q_2=
+\begin{bmatrix}
+1/3\\
+-2/3\\
+1/3
+\end{bmatrix}
+$$
+
+Its dot product with the constant column is:
+
+$$
+(1)(1/3)+(1)(-2/3)+(1)(1/3)=0
+$$
+
+Its dot product with the linear column is also zero:
+
+$$
+(-1)(1/3)+(0)(-2/3)+(1)(1/3)=0
+$$
+
+Therefore, the three functions
+
+$$
+1,\quad x,\quad x^2-\frac{2}{3}
+$$
+
+form an orthogonal basis for this particular set of observations.
+
+The adjustments required to construct orthogonal polynomials depend on the observed predictor values.
+
+A common mathematical procedure for constructing orthogonal bases is **Gram–Schmidt orthogonalization**, which progressively removes the components of each vector that overlap with previously constructed vectors. This produces mutually orthogonal basis functions while preserving the same polynomial function space.
+
+In R, `poly()` performs the orthogonal polynomial construction automatically, so these adjustments do not need to be calculated manually.
+
+#### Regression Using Orthogonal Polynomials
+
+For a polynomial of degree $d$, the model can be written as:
+
+$$
+E[Y\mid x]
+=
+\alpha_0+\sum_{k=1}^{d}\alpha_kq_k(x)
+$$
+
+where:
+
+-   $q_k(x)$ represents an orthogonal polynomial basis function.
+-   $\alpha_k$ is its corresponding regression coefficient.
+-   $d$ is the polynomial degree.
+
+The orthogonal basis spans the same polynomial function space as the raw basis of equal degree.
+
+Therefore, changing from raw to orthogonal polynomials does not change the set of relationships that the model can represent.
+
+Importantly, orthogonality is defined with respect to the predictor values used to construct the basis. The same columns are not necessarily orthogonal when evaluated on a different dataset.
+
+### R Implementation
+
+We use the same simulated age and muscle-strength dataset as in the previous sections.
+
+R constructs orthogonal polynomial bases automatically using `poly()` when `raw = TRUE` is not specified.
+
+#### Constructing and Visualizing the Basis
+
+```{r}
+#| label: orthogonal-basis
+#| fig-cap: "Orthogonal polynomial basis functions of degree 3."
+
+# Construct orthogonal polynomial basis
+orth_basis <- poly(sim$age_scaled, degree = 3)
+
+# Generate predictor values for visualization
+t_grid <- seq(0, 1, length.out = 200)
+
+# Evaluate the basis using the training transformation
+orth_grid <- predict(
+  orth_basis,
+  newdata = t_grid
+)
+
+# Visualize the three nonconstant basis functions
+matplot(
+  t_grid, orth_grid,
+  type = "l", lty = 1, lwd = 2,
+  col = c("steelblue", "darkorange",
+          "forestgreen"),
+  xlab = "Scaled predictor (t)",
+  ylab = "Basis function value",
+  main = "Orthogonal Polynomial Basis"
+)
+
+legend(
+  "topright",
+  legend = c("q1", "q2", "q3"),
+  col = c("steelblue", "darkorange",
+          "forestgreen"),
+  lty = 1, lwd = 2, bty = "n"
+)
+```
+
+The orthogonal basis functions have different shapes and scales from the raw and Bernstein bases.
+
+Unlike the Bernstein basis, orthogonal functions can take both positive and negative values.
+
+Their defining characteristic is not their visual appearance but the orthogonality of their evaluated columns across the training observations.
+
+#### Verifying Orthogonality
+
+We can verify the defining mathematical property using matrix multiplication.
+
+```{r}
+#| label: orthogonality-check
+
+# Calculate the cross-product matrix
+Q_cross <- crossprod(orth_basis)
+
+# Create a clean formatted table
+orth_table <- data.frame(
+  Basis = c("q1", "q2", "q3"),
+  q1 = round(Q_cross[, 1], 6),
+  q2 = round(Q_cross[, 2], 6),
+  q3 = round(Q_cross[, 3], 6)
+)
+
+# Display the orthogonality matrix
+knitr::kable(
+  orth_table,
+  caption = "Orthogonality Check: Cross-Product Matrix",
+  align = c("l", "r", "r", "r")
+)
+```
+
+The `crossprod()` function calculates $Q^\top Q$, where $Q$ contains the orthogonal polynomial basis columns.
+
+The resulting matrix has ones on the diagonal and zeros elsewhere (up to numerical precision), confirming that the basis columns are **orthonormal**:
+
+-   **Diagonal values of 1:** Each basis column has unit length.
+-   **Off-diagonal values of 0:** Different basis columns are orthogonal, meaning their dot product equals zero.
+
+This demonstrates the defining mathematical property of orthogonal polynomials.
+
+#### Fitting the Orthogonal Polynomial Model
+
+We now fit a cubic polynomial regression model.
+
+```{r}
+#| label: orthogonal-model
+
+# Fit a cubic orthogonal polynomial regression
+orth_fit <- lm(
+  strength ~ poly(age_scaled, 3),
+  data = sim
+)
+
+# Extract coefficient statistics
+coef_stats_orth <- summary(orth_fit)$coefficients
+
+# Create a formatted coefficient table
+orth_coef_table <- data.frame(
+  Term = c(
+    "Intercept",
+    "Orthogonal polynomial (q1)",
+    "Orthogonal polynomial (q2)",
+    "Orthogonal polynomial (q3)"
+  ),
+  Estimate = round(coef_stats_orth[, "Estimate"], 2),
+  `Std. Error` = round(coef_stats_orth[, "Std. Error"], 2),
+  `p-value` = ifelse(
+    coef_stats_orth[, "Pr(>|t|)"] < 0.001,
+    "< 0.001",
+    sprintf("%.3f", coef_stats_orth[, "Pr(>|t|)"])
+  ),
+  check.names = FALSE,
+  row.names = NULL
+)
+
+# Display the formatted table
+knitr::kable(
+  orth_coef_table,
+  caption = "Cubic Orthogonal Polynomial Regression Coefficients",
+  align = c("l", "r", "r", "r")
+)
+```
+
+The model includes three orthogonal polynomial predictors and an intercept.
+
+#### Comparing Orthogonal and Raw Polynomials
+
+We can verify whether the two approaches produce equivalent fitted values.
+
+```{r}
+#| label: orthogonal-equivalence
+
+# Calculate maximum absolute difference between
+# raw and orthogonal polynomial predictions
+max_difference_orth <- max(abs(
+  fitted(raw_fit) - fitted(orth_fit)
+))
+
+# Display a reader-friendly result
+cat(
+  "Maximum difference between predictions:",
+  ifelse(
+    max_difference_orth < 0.001,
+    "< 0.001 Nm",
+    paste0(round(max_difference_orth, 3), " Nm")
+  )
+)
+```
+
+The maximum absolute difference in fitted values is approximately zero, confirming that raw and orthogonal polynomial regression produce equivalent predictions up to numerical precision.
+
+Although their coefficients differ, both approaches represent the same cubic polynomial function space. Orthogonalization changes the mathematical representation and improves numerical conditioning without changing the fitted relationship.
+
+### Code Explanation and Interpretation
+
+**1. Constructing the orthogonal basis**
+
+The command `poly(sim$age_scaled, degree = 3)` generates three nonconstant orthogonal polynomial columns.
+
+Unlike raw polynomials, the resulting columns are constructed so that their pairwise dot products equal zero, within numerical precision.
+
+The `predict()` function evaluates the same basis transformation at new predictor values, preserving the scaling and normalization established from the training data.
+
+**2. Verifying orthogonality**
+
+The command `crossprod(orth_basis)` calculates the dot products between every pair of basis columns.
+
+Because the columns are orthonormal, the resulting matrix is approximately an identity matrix, with ones on the diagonal and zeros elsewhere.
+
+The `knitr::kable()` function presents these results in a formatted table, making the orthogonality property easier to visualize.
+
+**3. Estimating the model**
+
+The `lm()` function estimates the regression coefficients using ordinary least squares.
+
+The formula `poly(age_scaled, 3)` uses orthogonal polynomials by default, whereas `poly(age_scaled, 3, raw = TRUE)` uses ordinary polynomial powers.
+
+Both construct cubic polynomial models.
+
+The command `summary(orth_fit)$coefficients` extracts the coefficient estimates and their associated statistics, which are organized using `data.frame()` and displayed using `knitr::kable()`.
+
+**4. Comparing fitted values**
+
+The `fitted()` function extracts the predicted values for each observation.
+
+The expression `max(abs(...))` calculates the maximum absolute difference between the raw and orthogonal polynomial predictions.
+
+A difference smaller than 0.001 Nm confirms that the two models produce practically identical fitted values.
+
+#### Interpretation
+
+Orthogonal polynomial coefficients represent contributions associated with the orthogonal basis functions rather than directly corresponding to the original linear, quadratic, and cubic powers.
+
+Consequently, individual coefficients are generally less intuitive to interpret than those from a raw polynomial model.
+
+However, the fitted relationship and its predictions remain interpretable in the original predictor and outcome units.
+
+Orthogonality also reduces numerical dependence between polynomial terms, improving the conditioning of the regression problem.
+
+It does not, by itself, prevent overfitting or improve predictive accuracy. Polynomial degree, sample size, and model validation remain important considerations.
+
+Thus, orthogonal polynomials are primarily useful as an alternative numerical representation of polynomial regression, particularly when higher-degree polynomial terms would otherwise create substantial numerical instability.
+
+## Comparison of Polynomial Bases
+
+Natural, Bernstein, and orthogonal polynomials provide different mathematical representations of the same polynomial function space.
+
+For a fixed polynomial degree, each basis can represent the same set of polynomial relationships. However, the basis functions differ in their mathematical properties, coefficient interpretation, and numerical behavior.
+
+### Comparison of the Three Approaches
+
+| Property | Natural (Raw) | Bernstein | Orthogonal |
+|------------------|------------------|------------------|------------------|
+| **Basis construction** | Successive powers: $1,x,x^2,\ldots$ | Binomial basis functions | Orthogonalized polynomial functions |
+| **Main advantage** | Simple mathematical formulation and implementation | Nonnegative basis functions that sum to one on $[0,1]$ | Reduces numerical dependence between polynomial terms |
+| **Main limitation** | Higher powers may produce multicollinearity and numerical instability | Requires a specified interval; coefficients are less familiar | Coefficients are less directly interpretable |
+| **Coefficient interpretation** | Coefficients of individual polynomial powers | Weights associated with Bernstein basis functions | Coefficients associated with orthogonal polynomial components |
+| **When useful** | Low-degree models and straightforward polynomial representation | Shape-constrained modeling and polynomial approximation on bounded intervals | Higher-degree polynomial regression when numerical conditioning is a concern |
+
+**Note on statistical inference:** Although the three bases produce identical fitted values, their individual coefficients represent different mathematical quantities. Consequently, coefficient-level p-values test different hypotheses and should not be directly compared across bases as measures of model performance. Model equivalence is demonstrated through their fitted predictions.
+
+The choice of basis therefore depends primarily on the desired mathematical properties and numerical behavior, rather than on differences in the polynomial functions that can be represented.
+
+### Comparing Fitted Relationships
+
+We can demonstrate the equivalence of the three approaches by visualizing their predictions using the same simulated dataset and polynomial degree.
+
+```{r}
+#| label: polynomial-comparison
+#| fig-cap: "Comparison of cubic polynomial regression using natural, Bernstein, and orthogonal bases. All three produce equivalent fitted curves."
+#| fig-width: 8
+#| fig-height: 5
+#| warning: false
+#| message: false
+
+library(ggplot2)
+
+# Create a common prediction grid
+pred_grid <- data.frame(
+  age_scaled = seq(0, 1, length.out = 300)
+)
+
+# Convert scaled age back to years
+pred_grid$age <- 20 + 60 * pred_grid$age_scaled
+
+# Generate predictions from all three models
+pred_grid$raw <- predict(
+  raw_fit, newdata = pred_grid
+)
+
+pred_grid$bernstein <- predict(
+  bern_fit,
+  newdata = as.data.frame(
+    bern_basis(pred_grid$age_scaled, degree = 3)
+  )
+)
+
+pred_grid$orthogonal <- predict(
+  orth_fit, newdata = pred_grid
+)
+
+# Calculate the maximum difference across models
+max_diff <- max(
+  abs(pred_grid$raw - pred_grid$bernstein),
+  abs(pred_grid$raw - pred_grid$orthogonal),
+  abs(pred_grid$bernstein - pred_grid$orthogonal)
+)
+
+# Create a publication-style figure
+ggplot(sim, aes(x = age, y = strength)) +
+
+  geom_point(
+    color = "#94A3B8",
+    alpha = 0.55,
+    size = 1.9
+  ) +
+
+  geom_line(
+    data = pred_grid,
+    aes(x = age, y = raw),
+    inherit.aes = FALSE,
+    color = "#2563EB",
+    linewidth = 1.3
+  ) +
+
+  scale_x_continuous(breaks = seq(20, 80, 10)) +
+
+  labs(
+    title = "Polynomial Regression: Equivalent Fits",
+    subtitle = "Natural, Bernstein, and orthogonal bases produce the same curve",
+    x = "Age (years)",
+    y = "Simulated peak torque (Nm)",
+    caption = paste0(
+      "Maximum difference between predictions: ",
+      ifelse(max_diff < 0.001, "< 0.001",
+             sprintf("%.3f", max_diff)),
+      " Nm | Simulated data"
+    )
+  ) +
+
+  theme_minimal(base_size = 13) +
+
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(size = 10, color = "gray40"),
+    plot.caption = element_text(size = 9, color = "gray45"),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    plot.title.position = "plot"
+  )
+```
+
+**Code explanation**
+
+The three polynomial models are evaluated on an identical sequence of scaled age values, ensuring a direct comparison.
+
+-   `predict()` generates fitted muscle-strength values from each model.
+-   `bern_basis()` constructs the Bernstein basis functions for the prediction grid.
+-   `geom_point()` displays the observed simulated data.
+-   `geom_line()` displays the common fitted relationship using predictions from the raw polynomial model.
+-   `max(abs(...))` calculates the maximum absolute difference between predictions across all three models.
+-   `ggplot2` provides a consistent, publication-style visualization.
+
+Because all three models produce equivalent fitted values, only one curve is displayed to avoid redundant overlapping lines.
+
+The maximum prediction difference is reported in the figure caption, providing numerical confirmation of their equivalence.
+
+This demonstrates that **changing the polynomial basis alters the coefficient representation but not the fitted relationship**, when the polynomial degree and estimation conditions are identical.
+
+## Practical Considerations
+
+Although polynomial regression is flexible, several considerations influence its use in statistical modeling.
+
+### Selecting Polynomial Degree
+
+The degree of a polynomial determines its complexity.
+
+A degree-1 polynomial represents a straight line, whereas higher degrees allow increasingly flexible relationships.
+
+However, increasing the polynomial degree also increases the number of estimated coefficients and may introduce unnecessary complexity.
+
+A polynomial with insufficient flexibility may underfit the relationship, whereas an excessively flexible polynomial may overfit random variation in the training data.
+
+Polynomial degree should therefore be guided by scientific knowledge, diagnostic assessment, and predictive validation, such as cross-validation, when prediction is the objective.
+
+### Numerical Stability
+
+Higher-order raw polynomial terms can become strongly correlated, especially when the predictor spans a wide numerical range.
+
+This can produce an ill-conditioned design matrix and reduce the numerical reliability of coefficient estimation.
+
+Scaling predictors and using alternative bases, particularly orthogonal polynomials, can help address numerical conditioning.
+
+However, improving numerical conditioning does not necessarily improve out-of-sample predictive performance.
+
+### Extrapolation
+
+Polynomial models can behave unpredictably outside the observed predictor range.
+
+Even a polynomial that fits the training data well may produce unrealistic predictions when extrapolated beyond the values used for estimation.
+
+For example, a polynomial fitted to muscle strength between ages 20 and 80 should not automatically be assumed to describe strength at ages outside that range.
+
+Predictions should therefore be interpreted primarily within the domain supported by the observed data.
+
+### Interpretation and Scientific Relevance
+
+Polynomial regression describes the shape of a statistical association but does not, by itself, establish a causal relationship.
+
+Furthermore, individual polynomial coefficients may be difficult to interpret, especially when several powers of the same predictor are included.
+
+Consequently, interpretation should emphasize the overall fitted relationship, changes in predicted outcomes across meaningful predictor values, and uncertainty in the estimates.
+
+## Key Takeaways
+
+Polynomial regression extends the flexibility of linear regression through basis expansion, allowing nonlinear relationships to be modeled while retaining linearity in the regression coefficients.
+
+Three important polynomial representations were examined:
+
+1.  **Natural (raw) polynomials** use successive powers of the predictor and provide a straightforward mathematical representation of nonlinear relationships.
+
+2.  **Bernstein polynomials** use a binomial-based basis with nonnegative functions that sum to one, making them particularly useful for modeling on bounded intervals and implementing shape constraints.
+
+3.  **Orthogonal polynomials** construct mutually orthogonal basis columns, improving numerical conditioning and reducing numerical dependence between polynomial terms.
+
+For a fixed polynomial degree, all three bases span the same polynomial space and produce equivalent fitted values under ordinary least squares, provided the design matrices have full column rank and no additional constraints or penalties are imposed.
+
+The main distinction is therefore not the range of curves each basis can represent, but **how those curves are constructed, estimated, and interpreted**.
+
+Ultimately, the choice of polynomial degree determines model flexibility, while the choice of polynomial basis determines the mathematical and numerical representation of that flexibility.
+
+## AI Acknowledgment
+
+OpenAI ChatGPT was used during the development of this tutorial to support conceptual understanding, code development, and feedback on clarity and wording. The final analysis, interpretation, code, and written content were reviewed and understood by the author.
