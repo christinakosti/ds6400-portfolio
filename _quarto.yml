@@ -12,6 +12,7 @@ book:
     - 03-pdp-visualizing-the-model.qmd
     - 04-random-forests.qmd
     - 05-polynomial-regression.qmd
+    - HW7.qmd
 
 format:
   html:

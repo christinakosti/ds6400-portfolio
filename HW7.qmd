@@ -1,0 +1,585 @@
+---
+title: "HW7: Regularization"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## Overview
+
+In this homework, we use gene-expression data to predict riboflavin production. The goal is to compare Ridge, LASSO, Elastic Net and Principal Component Regression (PCR) to see how they handle a large number of predictors and which gives the lowest prediction error. We use 10-fold cross-validation to evaluate the models.
+
+## Data Preparation
+
+```{r}
+#| label: load-data
+#| message: false
+#| warning: false
+
+# Load the riboflavin dataset from our data folder
+riboflavin <- readRDS("data/riboflavin.rds")
+
+# Count observations (rows = participants/samples)
+n_obs <- nrow(riboflavin$x)
+
+# Count predictors (columns = gene-expression variables)
+n_pred <- ncol(riboflavin$x)
+```
+
+The riboflavin dataset contains `r n_obs` observations and `r n_pred` gene-expression predictors. The outcome variable is riboflavin production.
+
+Because the number of predictors  exceeds the number of observations (*p > n*), this dataset presents a high-dimensional regression problem in which ordinary least squares (OLS) cannot uniquely estimate all regression coefficients.
+
+## Why Ordinary Least Squares (OLS) Fails
+
+```{r}
+#| label: ols-identifiability
+#| message: false
+#| warning: false
+
+# Convert the predictor matrix into a data frame
+df <- as.data.frame(riboflavin$x)
+
+# Add riboflavin production as the outcome variable
+df$y <- riboflavin$y
+
+# Fit OLS using all predictors (the dot means all other variables)
+ols_fit <- lm(y ~ ., data = df)
+
+# Extract the coefficients and count those reported as NA
+n_missing <- sum(is.na(coef(ols_fit)))
+```
+
+**Interpretation.** We fitted an OLS model using all 4,088 predictors and found that `r n_missing` coefficients were returned as `NA`. This happens because we have more predictors than observations (4,088 vs. 71), so there isn't enough information to estimate each coefficient uniquely. In other words, different combinations of coefficients could produce the same predictions.
+
+## Ridge Regression
+
+```{r}
+#| label: ridge-cv
+#| message: false
+#| warning: false
+
+# Load the package for regularized regression
+library(glmnet)
+
+# Set a seed so results can be reproduced
+set.seed(123)
+
+# Create 10 folds to reuse when comparing models
+fold_id <- sample(rep(1:10, length.out = n_obs))
+
+# Fit Ridge regression (alpha = 0) with 10-fold cross-validation
+ridge_cv <- cv.glmnet(
+  x = riboflavin$x,       # Gene-expression predictors
+  y = riboflavin$y,       # Riboflavin production
+  alpha = 0,             # Ridge regression (L2 penalty)
+  foldid = fold_id       # Use our 10 predefined folds
+)
+
+# Extract the two recommended penalty values
+ridge_lambda_min <- ridge_cv$lambda.min
+ridge_lambda_1se <- ridge_cv$lambda.1se
+```
+
+Using 10-fold cross-validation, the selected penalty values were:
+
+- **Lambda.min:** `r signif(ridge_lambda_min, 3)`
+- **Lambda.1se:** `r signif(ridge_lambda_1se, 3)`
+
+```{r}
+#| label: ridge-cv-plot
+#| message: false
+#| warning: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "Ridge regression performance across penalty strengths using 10-fold cross-validation."
+
+library(ggplot2)
+
+# Extract cross-validation results
+ridge_results <- data.frame(
+  lambda = ridge_cv$lambda,
+  mse = ridge_cv$cvm,
+  se = ridge_cv$cvsd
+)
+
+# Create labels for the two selected lambda values
+ridge_selected <- data.frame(
+  lambda = c(ridge_lambda_min, ridge_lambda_1se),
+  criterion = c("Minimum CV error", "1-SE rule")
+)
+
+# Plot cross-validation error across lambda values
+ggplot(ridge_results, aes(x = lambda, y = mse)) +
+  geom_ribbon(
+    aes(ymin = pmax(mse - se, 0), ymax = mse + se),
+    fill = "#DCEAF2", alpha = 0.6
+  ) +
+  geom_line(color = "#245A81", linewidth = 1.2) +
+  geom_vline(
+    data = ridge_selected,
+    aes(xintercept = lambda, color = criterion),
+    linetype = "dashed", linewidth = 0.9
+  ) +
+  scale_color_manual(
+    values = c(
+      "Minimum CV error" = "#D97757",
+      "1-SE rule" = "#389B87"
+    ),
+    breaks = c("Minimum CV error", "1-SE rule"),
+    name = NULL
+  ) +
+  scale_x_log10() +
+  labs(
+    title = "Ridge Regression: Cross-Validation Performance",
+    subtitle = "10-fold cross-validation across penalty strengths",
+    x = expression("Penalty strength (" * lambda * ", log scale)"),
+    y = "Cross-validated mean squared error"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40", size = 11),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    legend.position = "top",
+    plot.caption = element_text(color = "grey45")
+  )
+```
+
+**Interpretation.** The lowest prediction error occurred at the smallest lambda tested (orange line). As lambda increased, the model's prediction error also increased, meaning stronger regularization did not improve performance. However, the 1-SE rule (green line) selected a larger lambda that shrinks the coefficients more while keeping prediction error relatively close to the minimum.
+
+## Ridge Coefficient Paths
+
+```{r}
+#| label: ridge-coefficient-path
+#| message: false
+#| warning: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "Ridge coefficient paths for the 40 genes with the largest maximum absolute coefficients."
+
+# Extract coefficients across all lambda values (excluding intercept)
+ridge_beta <- as.matrix(ridge_cv$glmnet.fit$beta)
+ridge_lambda <- ridge_cv$glmnet.fit$lambda
+
+# Select 40 genes with the largest absolute coefficients
+top_genes <- order(
+  apply(abs(ridge_beta), 1, max),
+  decreasing = TRUE
+)[1:40]
+
+# Organize the selected coefficients for plotting
+ridge_paths <- data.frame(
+  gene = rep(top_genes, times = length(ridge_lambda)),
+  neg_log_lambda = rep(-log(ridge_lambda), each = 40),
+  coefficient = as.vector(ridge_beta[top_genes, ])
+)
+
+# Plot the coefficient paths
+ggplot(ridge_paths,
+       aes(x = neg_log_lambda, y = coefficient, group = gene)) +
+  geom_hline(yintercept = 0, color = "grey65", linewidth = 0.4) +
+  geom_line(color = "#245A81", alpha = 0.45, linewidth = 0.6) +
+  labs(
+    title = "Ridge Regression: Coefficient Paths",
+    subtitle = "40 genes with the largest maximum absolute coefficients",
+    x = expression(-log(lambda)),
+    y = "Coefficient value"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40", size = 11),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+**Interpretation.** As lambda increases, the coefficients shrink toward zero, showing how Ridge reduces the influence of individual predictors. However, the coefficients generally remain nonzero, meaning Ridge retains the predictors rather than removing them.
+
+## LASSO Regression
+
+```{r}
+#| label: lasso-cv
+#| message: false
+#| warning: false
+
+# Fit LASSO using the same 10 CV folds as Ridge
+lasso_cv <- cv.glmnet(
+  x = riboflavin$x,
+  y = riboflavin$y,
+  alpha = 1,          # LASSO uses the L1 penalty
+  foldid = fold_id    # Same folds for a fair comparison
+)
+
+# Extract the selected penalty values
+lasso_lambda_min <- lasso_cv$lambda.min
+lasso_lambda_1se <- lasso_cv$lambda.1se
+
+# Get the coefficients at lambda.1se, excluding the intercept
+lasso_coef <- as.matrix(coef(lasso_cv, s = "lambda.1se"))[-1, 1]
+
+# Count genes with nonzero coefficients (selected predictors)
+n_lasso_selected <- sum(lasso_coef != 0)
+```
+
+Using 10-fold cross-validation:
+
+- **Lambda.min:** `r signif(lasso_lambda_min, 3)`
+- **Lambda.1se:** `r signif(lasso_lambda_1se, 3)`
+- **Genes retained at lambda.1se:** `r n_lasso_selected` out of `r n_pred`
+
+```{r}
+#| label: lasso-cv-plot
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "LASSO prediction error across penalty strengths using 10-fold cross-validation."
+#| message: false
+#| warning: false
+
+# Extract cross-validation results
+lasso_results <- data.frame(
+  lambda = lasso_cv$lambda,
+  mse = lasso_cv$cvm,
+  se = lasso_cv$cvsd
+)
+
+# Identify the two selected lambda values
+lasso_selected <- data.frame(
+  lambda = c(lasso_lambda_min, lasso_lambda_1se),
+  criterion = c("Minimum CV error", "1-SE rule")
+)
+
+# Plot prediction error across penalty strengths
+ggplot(lasso_results, aes(x = lambda, y = mse)) +
+  geom_ribbon(
+    aes(ymin = pmax(mse - se, 0), ymax = mse + se),
+    fill = "#DCEAF2", alpha = 0.6
+  ) +
+  geom_line(color = "#245A81", linewidth = 1.2) +
+  geom_vline(
+    data = lasso_selected,
+    aes(xintercept = lambda, color = criterion),
+    linetype = "dashed", linewidth = 0.9
+  ) +
+  scale_color_manual(
+    values = c(
+      "Minimum CV error" = "#D97757",
+      "1-SE rule" = "#389B87"
+    ),
+    breaks = c("Minimum CV error", "1-SE rule"),
+    name = NULL
+  ) +
+  scale_x_log10() +
+  labs(
+    title = "LASSO Regression: Cross-Validation Performance",
+    subtitle = "10-fold cross-validation across penalty strengths",
+    x = expression("Penalty strength (" * lambda * ", log scale)"),
+    y = "Cross-validated mean squared error"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40", size = 11),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    legend.position = "top"
+  )
+```
+
+**Interpretation.** LASSO achieved its lowest prediction error at a relatively small lambda. The 1-SE rule selected a larger penalty with only a small increase in error, allowing the model to retain fewer predictors while maintaining similar predictive performance. Stronger penalties beyond this point increased prediction error.
+
+## LASSO Coefficient Paths
+
+```{r}
+#| label: lasso-coefficient-path
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "LASSO coefficient paths across penalty strengths."
+
+# Extract gene coefficients and lambda values from the fitted LASSO
+lasso_beta <- as.matrix(lasso_cv$glmnet.fit$beta)
+lasso_lambda <- lasso_cv$glmnet.fit$lambda
+
+# Select the 40 genes with the largest absolute coefficients
+top_lasso_genes <- order(
+  apply(abs(lasso_beta), 1, max),
+  decreasing = TRUE
+)[1:40]
+
+# Organize coefficients for plotting
+lasso_paths <- data.frame(
+  gene = rep(rownames(lasso_beta)[top_lasso_genes],
+             times = length(lasso_lambda)),
+  neg_log_lambda = rep(-log(lasso_lambda), each = 40),
+  coefficient = as.vector(lasso_beta[top_lasso_genes, ])
+)
+
+# Plot how coefficients change as lambda varies
+ggplot(lasso_paths,
+       aes(x = neg_log_lambda, y = coefficient, group = gene)) +
+  geom_hline(yintercept = 0, color = "grey65", linewidth = 0.4) +
+  geom_line(color = "#245A81", alpha = 0.55, linewidth = 0.7) +
+  labs(
+    title = "LASSO Regression: Coefficient Paths",
+    subtitle = "40 genes with the largest maximum absolute coefficients",
+    x = expression(-log(lambda)),
+    y = "Coefficient value"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40", size = 11),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(color = "grey40", hjust = 0)
+  )
+```
+
+
+**Interpretation.** As lambda increases, more coefficients become exactly zero, meaning LASSO removes predictors from the model. Unlike Ridge, which only shrinks coefficients toward zero, LASSO also performs variable selection.
+
+## Elastic Net Regression
+
+```{r}
+#| label: elastic-net-comparison
+#| message: false
+#| warning: false
+
+library(gt)
+
+# Test three mixtures of Ridge (L2) and LASSO (L1)
+# Higher alpha = more emphasis on LASSO
+en_alphas <- c(0.25, 0.50, 0.75)
+
+# Fit one Elastic Net model for each alpha
+# For each model, 10-fold CV tests different lambda values
+# We reuse the same folds to make the comparison consistent
+en_fits <- lapply(en_alphas, function(a) {
+  cv.glmnet(
+    x = riboflavin$x,  # Gene-expression predictors
+    y = riboflavin$y,  # Riboflavin production
+    alpha = a,         # Current L1/L2 mixture
+    foldid = fold_id   # Same 10 CV folds
+  )
+})
+
+# For each alpha, extract:
+# 1. Lambda that minimizes cross-validation error
+# 2. Lowest cross-validation mean squared error
+en_results <- data.frame(
+  alpha = en_alphas,
+  lambda_min = sapply(en_fits, function(m) m$lambda.min),
+  min_cv_mse = sapply(en_fits, function(m) min(m$cvm))
+)
+
+# Create a results table
+en_results |>
+  gt() |>
+  tab_header(title = "Elastic Net Model Comparison") |>
+  fmt_number(columns = alpha, decimals = 2) |>
+  fmt_number(
+    columns = c(lambda_min, min_cv_mse),
+    decimals = 3
+  ) |>
+  cols_label(
+    alpha = "Alpha (α)",
+    lambda_min = "Optimal λ",
+    min_cv_mse = "Minimum CV-MSE"
+  ) |>
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(16),
+    column_labels.font.weight = "bold"
+  )
+```
+
+**Interpretation.** Elastic Net achieved the lowest prediction error with α = 0.75 (CV-MSE = 0.213). However, all three alpha values produced similar errors (0.213–0.220), suggesting that the balance between Ridge and LASSO had little impact on prediction performance in this comparison.
+
+```{r}
+#| label: elastic-net-selection
+
+# Identify the Elastic Net model with the lowest CV-MSE
+best_en <- en_fits[[which.min(en_results$min_cv_mse)]]
+
+# Extract its coefficients at lambda.1se (excluding intercept)
+en_coef <- as.matrix(coef(best_en, s = "lambda.1se"))[-1, 1]
+
+# Count genes retained (coefficients not equal to zero)
+n_en_selected <- sum(en_coef != 0)
+```
+
+At the 1-SE penalty:
+
+- **Elastic Net (α = 0.75):** `r n_en_selected` genes retained.
+- **LASSO (α = 1):** `r n_lasso_selected` genes retained.
+
+Elastic Net retained slightly more predictors than LASSO (36 vs. 32) suggesting a less sparse model.
+
+## Principal Component Regression (PCR)
+
+```{r}
+#| label: pcr-model
+#| message: false
+#| warning: false
+
+# Load the package for principal component regression
+library(pls)
+
+# Fit PCR using up to 50 principal components
+# Scale predictors so genes with larger values don't dominate
+# Use the same 10 CV folds as our previous models
+pcr_fit <- pcr(
+  y ~ x,
+  data = riboflavin,
+  scale = TRUE,
+  ncomp = 50,
+  validation = "CV",
+  segments = split(seq_len(n_obs), fold_id)
+)
+
+# Extract cross-validation MSE for 0 to 50 components
+pcr_mse <- drop(MSEP(pcr_fit, estimate = "CV")$val)
+
+# Find the number of components with the lowest CV-MSE
+# Subtract 1 because the first result uses 0 components
+k_opt <- which.min(pcr_mse) - 1
+```
+
+Using 10-fold cross-validation, the optimal number of principal components was **`r k_opt`**, with a CV-MSE of **`r round(min(pcr_mse), 3)`**.
+
+```{r}
+#| label: pcr-cv-plot
+#| message: false
+#| warning: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "PCR prediction error across different numbers of principal components."
+
+# Organize the CV errors for models using 0 to 50 components
+pcr_results <- data.frame(
+  ncomp = 0:(length(pcr_mse) - 1),
+  mse = as.numeric(pcr_mse)
+)
+
+# Identify the model with the lowest prediction error
+pcr_best <- subset(pcr_results, ncomp == k_opt)
+
+# Plot prediction error against the number of components
+ggplot(pcr_results, aes(x = ncomp, y = mse)) +
+  geom_line(color = "#245A81", linewidth = 1.2) +
+  geom_point(
+    data = pcr_best,
+    color = "#D97757", size = 3
+  ) +
+  geom_vline(
+    xintercept = k_opt,
+    color = "#D97757", linetype = "dashed",
+    linewidth = 0.9
+  ) +
+  
+# Label the optimal number of components
+annotate(
+  "label",
+  x = k_opt + 2,
+  y = max(pcr_results$mse) * 0.85,
+  label = paste0("Optimal: ", k_opt, " PCs"),
+  fill = "white",
+  color = "#D97757",
+  label.size = 0,
+  fontface = "bold",
+  size = 3.8
+) +
+  scale_x_continuous(breaks = seq(0, 50, 5)) +
+  labs(
+    title = "PCR: Cross-Validation Performance",
+    subtitle = "10-fold cross-validation across principal components",
+    x = "Number of principal components",
+    y = "Cross-validated mean squared error"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40", size = 11),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+**Interpretation.** Prediction error decreased as we added more principal components, reaching its minimum at 24 components. Beyond this point, adding more components slightly increased the error. This shows that 24 components captured the most useful information for prediction within the range tested without needing to include all 4,088 predictors separately.
+
+```{r}
+#| label: pcr-back-transformation
+
+# Convert the PCR coefficients back to the original gene scale
+# Use the optimal number of components selected by CV
+pcr_beta <- as.vector(
+  coef(pcr_fit, ncomp = k_opt, intercept = FALSE)
+)
+
+# Count the coefficients recovered
+n_pcr_coef <- length(pcr_beta)
+```
+
+The PCR model used `r k_opt` principal components, which were back-transformed into `r n_pcr_coef` coefficients corresponding to the original gene-expression predictors.
+
+```{r}
+#| label: pcr-first-prediction
+
+# Extract the intercept from our PCR model
+# The intercept is the starting value of the prediction
+pcr_intercept <- as.numeric(
+  coef(pcr_fit, ncomp = k_opt, intercept = TRUE)[1, 1, 1]
+)
+
+# Predict the outcome for the first observation
+# Multiply each gene value by its coefficient, add them up,
+# and include the intercept
+pcr_pred_first <- pcr_intercept +
+  sum(riboflavin$x[1, ] * pcr_beta)
+```
+
+Using `r k_opt` principal components, the predicted log riboflavin production rate for the first observation was **`r round(pcr_pred_first, 3)`**.
+
+Although PCR uses only `r k_opt` components, we still need all 4,088 gene measurements to calculate them, since each component is a combination of the original predictors.
+
+## Model Comparison
+
+```{r}
+#| label: model-comparison
+
+# Collect the lowest CV-MSE from each method
+# All models were evaluated using 10-fold cross-validation
+model_comparison <- data.frame(
+  method = c("Ridge", "LASSO", "Elastic Net", "PCR"),
+  cv_mse = c(
+    min(ridge_cv$cvm),           # Ridge: best lambda
+    min(lasso_cv$cvm),           # LASSO: best lambda
+    min(en_results$min_cv_mse),  # Elastic Net: best alpha and lambda
+    min(pcr_mse)                 # PCR: optimal number of components
+  )
+)
+
+# Create a table and highlight the best model
+model_comparison |>
+  gt() |>
+  tab_header(title = "Comparison of Regularization Methods") |>
+  fmt_number(columns = cv_mse, decimals = 3) |>
+  cols_label(
+    method = "Method",
+    cv_mse = "Minimum CV-MSE"
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = "#245A81"),
+    locations = cells_body(rows = cv_mse == min(cv_mse))
+  ) |>
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(16),
+    column_labels.font.weight = "bold"
+  )
+```
+
+**Interpretation.** LASSO had the lowest cross-validation error (MSE = 0.210), followed closely by Elastic Net (0.213). We might expect LASSO to perform better than Ridge if only a small number of genes are useful for prediction, since LASSO can remove less useful predictors. Our results are consistent with this expectation, although we cannot be sure how many genes are really important. PCR and Ridge had higher prediction errors.
