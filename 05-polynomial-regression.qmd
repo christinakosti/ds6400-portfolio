@@ -1321,7 +1321,3 @@ For a fixed polynomial degree, all three bases span the same polynomial space an
 The main distinction is therefore not the range of curves each basis can represent, but **how those curves are constructed, estimated, and interpreted**.
 
 Ultimately, the choice of polynomial degree determines model flexibility, while the choice of polynomial basis determines the mathematical and numerical representation of that flexibility.
-
-## AI Acknowledgment
-
-OpenAI ChatGPT was used during the development of this tutorial to support conceptual understanding, code development, and feedback on clarity and wording. The final analysis, interpretation, code, and written content were reviewed and understood by the author.

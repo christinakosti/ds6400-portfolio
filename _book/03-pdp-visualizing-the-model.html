@@ -71,6 +71,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
+<link href="./04-random-forests.html" rel="next">
 <link href="./02-632-plus-bootstrap.html" rel="prev">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -200,6 +201,18 @@ window.Quarto = {
  <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-random-forests.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Random Forests</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-polynomial-regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Polynomial Regression: Natural, Bernstein and Orthogonal Bases</span></span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -241,7 +254,6 @@ window.Quarto = {
   <li><a href="#comparing-the-fitted-models" id="toc-comparing-the-fitted-models" class="nav-link" data-scroll-target="#comparing-the-fitted-models"><span class="header-section-number">3.7.5</span> Comparing the fitted models</a></li>
   </ul></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">3.8</span> References</a></li>
-  <li><a href="#ai-use-acknowledgement" id="toc-ai-use-acknowledgement" class="nav-link" data-scroll-target="#ai-use-acknowledgement"><span class="header-section-number">3.9</span> AI use acknowledgement</a></li>
   </ul>
 </nav>
     </div>
@@ -1122,10 +1134,6 @@ Y = E[Y \mid X] + \varepsilon,
 <section id="references" class="level2" data-number="3.8">
 <h2 data-number="3.8" class="anchored" data-anchor-id="references"><span class="header-section-number">3.8</span> References</h2>
 <p>Hastie, T., Tibshirani, R., &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning: Data Mining, Inference, and Prediction</em> (2nd ed.). Springer.</p>
-</section>
-<section id="ai-use-acknowledgement" class="level2" data-number="3.9">
-<h2 data-number="3.9" class="anchored" data-anchor-id="ai-use-acknowledgement"><span class="header-section-number">3.9</span> AI use acknowledgement</h2>
-<p>OpenAI ChatGPT (GPT-5.6 Sol) was used during the development of this tutorial to support conceptual understanding, assist with the structure and explanation of the partial dependence analysis, help develop and troubleshoot R/Quarto code, and provide feedback on clarity and wording. The final analysis, interpretation, code, and written content were reviewed and understood by the author.</p>
 
 
 </section>
@@ -1538,6 +1546,9 @@ Y = E[Y \mid X] + \varepsilon,
       </a>          
   </div>
   <div class="nav-page nav-page-next">
+      <a href="./04-random-forests.html" class="pagination-link" aria-label="Random Forests">
+        <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Random Forests</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
   </div>
 </nav>
 </div> <!-- /content -->

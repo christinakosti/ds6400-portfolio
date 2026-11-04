@@ -695,7 +695,3 @@ Despite these differences in shape, the two approaches identify similar overall 
 ## References
 
 Hastie, T., Tibshirani, R., & Friedman, J. (2009). *The Elements of Statistical Learning: Data Mining, Inference, and Prediction* (2nd ed.). Springer.
-
-## AI use acknowledgement
-
-OpenAI ChatGPT (GPT-5.6 Sol) was used during the development of this tutorial to support conceptual understanding, assist with the structure and explanation of the partial dependence analysis, help develop and troubleshoot R/Quarto code, and provide feedback on clarity and wording. The final analysis, interpretation, code, and written content were reviewed and understood by the author.
