@@ -1,0 +1,2334 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>2&nbsp; The .632+ Bootstrap Method – ds6400-portfolio</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./03-pdp-visualizing-the-model.html" rel="next">
+<link href="./01-cross-validation-selection-bias.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-631496449bf32ff9b0bb69a6bfd9195d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./02-632-plus-bootstrap.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">The .632+ Bootstrap Method</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">ds6400-portfolio</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-cross-validation-selection-bias.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Cross-Validation Selection Bias</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-632-plus-bootstrap.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">The .632+ Bootstrap Method</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-pdp-visualizing-the-model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-random-forests.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Random Forests</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-polynomial-regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Polynomial Regression: Natural, Bernstein and Orthogonal Bases</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./HW7.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">HW7: Regularization</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-regularization-elastic-net.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Regularization - Elastic Net</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#efron-tibshirani-1997" id="toc-efron-tibshirani-1997" class="nav-link active" data-scroll-target="#efron-tibshirani-1997"><span class="header-section-number">2.1</span> Efron &amp; Tibshirani (1997)</a>
+  <ul class="collapse">
+  <li><a href="#problem" id="toc-problem" class="nav-link" data-scroll-target="#problem"><span class="header-section-number">2.1.1</span> Problem</a></li>
+  <li><a href="#what-do-the-authors-propose-instead" id="toc-what-do-the-authors-propose-instead" class="nav-link" data-scroll-target="#what-do-the-authors-propose-instead"><span class="header-section-number">2.1.2</span> What do the authors propose instead?</a></li>
+  <li><a href="#study-design" id="toc-study-design" class="nav-link" data-scroll-target="#study-design"><span class="header-section-number">2.1.3</span> Study design</a></li>
+  <li><a href="#classifier-implementation" id="toc-classifier-implementation" class="nav-link" data-scroll-target="#classifier-implementation"><span class="header-section-number">2.1.4</span> Classifier implementation</a></li>
+  <li><a href="#bootstrap-implementation" id="toc-bootstrap-implementation" class="nav-link" data-scroll-target="#bootstrap-implementation"><span class="header-section-number">2.1.5</span> Bootstrap implementation</a></li>
+  <li><a href="#main-findings" id="toc-main-findings" class="nav-link" data-scroll-target="#main-findings"><span class="header-section-number">2.1.6</span> Main findings</a></li>
+  <li><a href="#main-conclusion-stop-doing-x-start-doing-y" id="toc-main-conclusion-stop-doing-x-start-doing-y" class="nav-link" data-scroll-target="#main-conclusion-stop-doing-x-start-doing-y"><span class="header-section-number">2.1.7</span> Main conclusion: stop doing X, start doing Y</a></li>
+  <li><a href="#proposed-computational-exploration" id="toc-proposed-computational-exploration" class="nav-link" data-scroll-target="#proposed-computational-exploration"><span class="header-section-number">2.1.8</span> Proposed computational exploration</a></li>
+  <li><a href="#planned-figure" id="toc-planned-figure" class="nav-link" data-scroll-target="#planned-figure"><span class="header-section-number">2.1.9</span> Planned figure</a></li>
+  <li><a href="#computational-exploration" id="toc-computational-exploration" class="nav-link" data-scroll-target="#computational-exploration"><span class="header-section-number">2.1.10</span> Computational exploration</a></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions"><span class="header-section-number">2.1.11</span> Conclusions</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">The .632+ Bootstrap Method</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="efron-tibshirani-1997" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="efron-tibshirani-1997"><span class="header-section-number">2.1</span> Efron &amp; Tibshirani (1997)</h2>
+<p><strong>Title:</strong> Improvements on Cross-Validation: The .632+ Bootstrap Method<br>
+<strong>Journal:</strong> Journal of the American Statistical Association (JASA)</p>
+<section id="problem" class="level3" data-number="2.1.1">
+<h3 data-number="2.1.1" class="anchored" data-anchor-id="problem"><span class="header-section-number">2.1.1</span> Problem</h3>
+<p>When a prediction model is trained on a sample of data, an important question is how accurately it will perform on new observations that were not used to train the model. Because the true prediction error on future data is usually unknown, it must be estimated from the available sample.</p>
+<p>Cross-validation is commonly used for this purpose and can provide a nearly unbiased estimate of prediction error. However, cross-validation estimates can have high variability, meaning that the estimated error may change substantially across different samples drawn from the same population.</p>
+<p>Bootstrap methods provide another way to estimate prediction error. By repeatedly resampling the observed data and averaging across many bootstrap samples, they can produce more stable error estimates with lower variability. However, this reduction in variability can come at the cost of increased bias.</p>
+<p>This creates a bias–variance trade-off: an estimator with very low bias may still perform poorly if it is highly variable, while a more stable estimator may perform better overall even if it introduces some bias. Efron and Tibshirani therefore investigate whether bootstrap-based methods can achieve a better balance between bias and variability when estimating prediction error.</p>
+<p><img src="images/bias-vs-variance.jpg" class="img-fluid" alt="Illustration of low and high bias combined with low and high variance"></p>
+<p>The center of each target represents the true value. Bias describes how far the estimates are systematically shifted away from the truth, while variance describes how widely the estimates are spread across repeated samples. Ideally, an estimator should have both low bias and low variance.</p>
+</section>
+<section id="what-do-the-authors-propose-instead" class="level3" data-number="2.1.2">
+<h3 data-number="2.1.2" class="anchored" data-anchor-id="what-do-the-authors-propose-instead"><span class="header-section-number">2.1.2</span> What do the authors propose instead?</h3>
+<p>The authors investigate bootstrap-based estimates of prediction error as a way to reduce the high variability that can occur with cross-validation. Their main contribution is the <strong>.632+ bootstrap estimator</strong>, which attempts to combine relatively low variability with limited bias.</p>
+<p>A bootstrap sample is created by repeatedly sampling observations from the original dataset <strong>with replacement</strong>. This means that after an observation is selected, it remains available to be selected again. As a result, some observations may appear several times in a bootstrap sample, while others may not appear at all.</p>
+<p>To illustrate, consider a very small dataset containing five observations:</p>
+<p><span class="math display">\[
+\{1,2,3,4,5\}.
+\]</span></p>
+<p>Each bootstrap sample also contains five draws, but all five draws come from the original observations.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">632</span>) <span class="co"># Makes the bootstrap samples reproducible</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>original <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span> <span class="co"># Original dataset</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>bootstrap_1 <span class="ot">&lt;-</span> <span class="fu">sample</span>(original, <span class="at">size =</span> <span class="dv">5</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>bootstrap_2 <span class="ot">&lt;-</span> <span class="fu">sample</span>(original, <span class="at">size =</span> <span class="dv">5</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>bootstrap_3 <span class="ot">&lt;-</span> <span class="fu">sample</span>(original, <span class="at">size =</span> <span class="dv">5</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>bootstrap_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sample =</span> <span class="fu">c</span>(<span class="st">"Bootstrap 1"</span>, <span class="st">"Bootstrap 2"</span>, <span class="st">"Bootstrap 3"</span>),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">Draw_1 =</span> <span class="fu">c</span>(bootstrap_1[<span class="dv">1</span>], bootstrap_2[<span class="dv">1</span>], bootstrap_3[<span class="dv">1</span>]),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Draw_2 =</span> <span class="fu">c</span>(bootstrap_1[<span class="dv">2</span>], bootstrap_2[<span class="dv">2</span>], bootstrap_3[<span class="dv">2</span>]),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Draw_3 =</span> <span class="fu">c</span>(bootstrap_1[<span class="dv">3</span>], bootstrap_2[<span class="dv">3</span>], bootstrap_3[<span class="dv">3</span>]),</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">Draw_4 =</span> <span class="fu">c</span>(bootstrap_1[<span class="dv">4</span>], bootstrap_2[<span class="dv">4</span>], bootstrap_3[<span class="dv">4</span>]),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Draw_5 =</span> <span class="fu">c</span>(bootstrap_1[<span class="dv">5</span>], bootstrap_2[<span class="dv">5</span>], bootstrap_3[<span class="dv">5</span>]),</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">Omitted =</span> <span class="fu">c</span>(</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste</span>(<span class="fu">setdiff</span>(original, bootstrap_1), <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste</span>(<span class="fu">setdiff</span>(original, bootstrap_2), <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste</span>(<span class="fu">setdiff</span>(original, bootstrap_3), <span class="at">collapse =</span> <span class="st">", "</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  bootstrap_table,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">align =</span> <span class="st">"c"</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Example of bootstrap resampling with replacement"</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Example of bootstrap resampling with replacement</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Sample</th>
+<th style="text-align: center;">Draw_1</th>
+<th style="text-align: center;">Draw_2</th>
+<th style="text-align: center;">Draw_3</th>
+<th style="text-align: center;">Draw_4</th>
+<th style="text-align: center;">Draw_5</th>
+<th style="text-align: center;">Omitted</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Bootstrap 1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3, 4</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Bootstrap 2</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1, 2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Bootstrap 3</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">4</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Although each bootstrap sample contains the same number of draws as the original dataset, repeated observations mean that not every original observation is necessarily represented.</p>
+<p>For a dataset containing <span class="math inline">\(n\)</span> observations, the probability that a particular observation is <strong>not</strong> selected in one bootstrap sample is</p>
+<p><span class="math display">\[
+\left(1-\frac{1}{n}\right)^n.
+\]</span></p>
+<p>As <span class="math inline">\(n\)</span> becomes large, this approaches</p>
+<p><span class="math display">\[
+e^{-1} \approx 0.368.
+\]</span></p>
+<p>Therefore, approximately 36.8% of the original observations are expected to be left out of a bootstrap sample, while approximately</p>
+<p><span class="math display">\[
+1-0.368=0.632
+\]</span></p>
+<p>or 63.2% are represented at least once.</p>
+<p>The observations that are not selected in a particular bootstrap sample were not used to train the model on that resample. They can therefore be used to evaluate how well the fitted prediction rule performs on observations that were left out of training.</p>
+<p>By repeating this process across many bootstrap samples and averaging the resulting prediction errors, the estimate becomes smoother and generally less variable than ordinary leave-one-out cross-validation.</p>
+<p>However, bootstrap estimation introduces another problem. Although a bootstrap sample contains <span class="math inline">\(n\)</span> draws, only about 63.2% of the original observations are represented as unique observations. The fitted model is therefore effectively being trained on less unique information than the model trained on the complete dataset.</p>
+<p>Because prediction error generally increases when a model is trained on less data, the leave-one-out bootstrap estimate can be biased upward. Thus, bootstrap smoothing reduces variability but may introduce bias.</p>
+<p>To correct this upward bias, Efron previously proposed the <strong>.632 estimator</strong>, which combines the apparent training error with the leave-one-out bootstrap prediction error:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}
+=
+0.368\,\mathrm{err}
++
+0.632\,\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\mathrm{err}\)</span> is the <strong>apparent error</strong>, obtained by evaluating the fitted model on the same observations used to train it. Because the model has already seen these observations, this error is generally biased downward.</li>
+<li><span class="math inline">\(\widehat{\mathrm{Err}}^{(1)}\)</span> is the <strong>leave-one-out bootstrap error</strong>, estimated using observations that were omitted from the bootstrap samples used to fit the model.</li>
+</ul>
+<p>The .632 estimator therefore combines an error estimate that tends to be too optimistic with one that tends to be too pessimistic. It assigns 36.8% weight to the apparent training error and 63.2% weight to the bootstrap error.</p>
+<p>However, the .632 estimator can become too optimistic when the prediction rule strongly overfits the training data.</p>
+<p>The authors illustrate this using a no-information classification problem in which the outcome is equally likely to belong to either of two classes and the predictors contain no useful information about the outcome. In this setting, the true prediction error is 50%.</p>
+<p>A highly flexible classifier such as 1-nearest-neighbor can nevertheless achieve an apparent training error of</p>
+<p><span class="math display">\[
+\mathrm{err}=0,
+\]</span></p>
+<p>because each training observation is effectively able to predict itself.</p>
+<p>If the leave-one-out bootstrap error is approximately equal to the true no-information error of 0.50, the original .632 estimator would give</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}
+=
+0.368(0)
++
+0.632(0.50)
+=
+0.316.
+\]</span></p>
+<p>The estimated prediction error would therefore be only 31.6%, even though the true error is 50%. The problem occurs because the .632 estimator always assigns 36.8% of its weight to the apparent training error, even when that training error is extremely optimistic because of overfitting.</p>
+<p>To address this problem, Efron and Tibshirani propose the <strong>.632+ estimator</strong>. Unlike the original .632 estimator, which always uses a fixed bootstrap weight of 0.632, the .632+ method changes the weight according to how strongly the fitted prediction rule appears to be overfitting.</p>
+<p>To quantify the amount of overfitting, the authors define a <strong>relative overfitting rate</strong>, <span class="math inline">\(R\)</span>:</p>
+<p><span class="math display">\[
+R
+=
+\frac{
+\widehat{\mathrm{Err}}^{(1)}-\mathrm{err}
+}{
+\gamma-\mathrm{err}
+}.
+\]</span></p>
+<p>Here, <span class="math inline">\(\gamma\)</span> represents the <strong>no-information error rate</strong>, or the prediction error expected when the predictors contain no useful information about the outcome.</p>
+<p>The numerator,</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}^{(1)}-\mathrm{err},
+\]</span></p>
+<p>measures how much worse the model performs on observations that were not used for training compared with its apparent training performance. The denominator scales this difference relative to the error expected when there is no useful predictive information.</p>
+<p>Conceptually:</p>
+<ul>
+<li><span class="math inline">\(R \approx 0\)</span> indicates little evidence of overfitting.</li>
+<li><span class="math inline">\(R \approx 1\)</span> indicates severe overfitting.</li>
+</ul>
+<p>The .632+ estimator then uses <span class="math inline">\(R\)</span> to determine the weight placed on the bootstrap error:</p>
+<p><span class="math display">\[
+w
+=
+\frac{0.632}
+{1-0.368R}.
+\]</span></p>
+<p>The final prediction-error estimate is</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632+}
+=
+(1-w)\mathrm{err}
++
+w\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p>When there is little overfitting and <span class="math inline">\(R\)</span> is close to 0, <span class="math inline">\(w\)</span> is approximately 0.632, so the method behaves similarly to the original .632 estimator.</p>
+<p>As overfitting becomes more severe and <span class="math inline">\(R\)</span> approaches 1, <span class="math inline">\(w\)</span> approaches 1. The estimator therefore gives progressively less weight to the overly optimistic training error and more weight to the bootstrap prediction error.</p>
+<p>The .632+ method therefore attempts to preserve the lower variability obtained through bootstrap smoothing while reducing the optimistic bias that can occur when a prediction rule strongly overfits the training data.</p>
+</section>
+<section id="study-design" class="level3" data-number="2.1.3">
+<h3 data-number="2.1.3" class="anchored" data-anchor-id="study-design"><span class="header-section-number">2.1.3</span> Study design</h3>
+<p>The authors evaluated the performance of the .632+ estimator using a series of <strong>24 sampling experiments</strong> designed to represent different prediction problems.</p>
+<p>The experiments varied several characteristics of the prediction problem, including:</p>
+<ul>
+<li>training sample size</li>
+<li>number of predictors</li>
+<li>number of outcome classes</li>
+<li>strength of the relationship between the predictors and outcome</li>
+<li>type of prediction rule</li>
+</ul>
+<p>Twenty-one of the experiments involved binary classification, while three involved four or more classes. Classification performance was evaluated using <strong>0-1 loss</strong>, where each prediction was recorded as either correct or incorrect.</p>
+<p>Most of the experiments used simulated data, which allowed the authors to know the underlying data-generating distribution and therefore determine the true prediction error against which the different error estimators could be compared.</p>
+<p>The first 12 experiments were each repeated using <strong>200 independently generated training datasets</strong>, while the remaining 12 experiments used <strong>50 repetitions</strong>. This repeated-sampling design allowed the authors to examine not only the average bias of each error estimator, but also how much the estimates varied across different training samples.</p>
+<p>The experiments included both settings with useful predictive information and <strong>no-information settings</strong>, in which the predictors were independent of the outcome. In the binary no-information experiments, the true prediction error was approximately 50%.</p>
+<p>The final experiments also included real classification datasets from the UC Irvine Machine Learning Repository, allowing the methods to be evaluated beyond completely simulated examples.</p>
+<p>For each experiment, the authors compared several methods for estimating prediction error, including leave-one-out cross-validation, 5-fold and 10-fold cross-validation, the leave-one-out bootstrap estimator, the original .632 estimator, and the new .632+ estimator.</p>
+<p>The bootstrap-based methods used <strong>50 bootstrap replications</strong> for each simulated training dataset.</p>
+<p>The performance of each error estimator was summarized using three quantities:</p>
+<ul>
+<li><strong>Expectation (Exp):</strong> the average estimated prediction error across repeated samples, which can be compared with the true error to assess bias.</li>
+<li><strong>Standard deviation (SD):</strong> how much the estimated prediction error varied across repeated samples.</li>
+<li><strong>Root mean squared error (RMS):</strong> the overall discrepancy between the estimated and true prediction error, reflecting both bias and variability.</li>
+</ul>
+</section>
+<section id="classifier-implementation" class="level3" data-number="2.1.4">
+<h3 data-number="2.1.4" class="anchored" data-anchor-id="classifier-implementation"><span class="header-section-number">2.1.4</span> Classifier implementation</h3>
+<p>The authors evaluated the different prediction-error estimators using several classification rules with different levels of flexibility and stability. This was important because the performance of cross-validation and bootstrap error estimates can depend on the type of prediction rule being evaluated.</p>
+<p>The classifiers included:</p>
+<ul>
+<li>Fisher’s linear discriminant function (LDF)</li>
+<li>1-nearest neighbor (1-NN)</li>
+<li>3-nearest neighbor (3-NN)</li>
+<li>classification trees</li>
+<li>quadratic discriminant function (QDF)</li>
+</ul>
+<p>Using several different classifiers allowed the authors to examine whether the .632+ estimator performed well across both relatively smooth prediction rules and more flexible or unstable rules.</p>
+<section id="linear-discriminant-function-ldf" class="level4" data-number="2.1.4.1">
+<h4 data-number="2.1.4.1" class="anchored" data-anchor-id="linear-discriminant-function-ldf"><span class="header-section-number">2.1.4.1</span> Linear discriminant function (LDF)</h4>
+<p>The <strong>linear discriminant function (LDF)</strong>, also known as linear discriminant analysis, is a classification method that assigns an observation to the class it is most likely to belong to based on its predictor values.</p>
+<p>Suppose an observation has <span class="math inline">\(p\)</span> predictors:</p>
+<p><span class="math display">\[
+\mathbf{x}=(x_1,x_2,\ldots,x_p)^T.
+\]</span></p>
+<p>Here, <span class="math inline">\(\mathbf{x}\)</span> represents the complete set of predictor values for one observation, and <span class="math inline">\(T\)</span> indicates that they are written as a column vector.</p>
+<p>LDF assumes that the predictors within each class approximately follow a multivariate normal distribution:</p>
+<p><span class="math display">\[
+\mathbf{X}\mid Y=k
+\sim
+N_p(\boldsymbol{\mu}_k,\Sigma).
+\]</span></p>
+<p>In this notation:</p>
+<ul>
+<li><span class="math inline">\(\boldsymbol{\mu}_k\)</span> is the mean predictor vector for class <span class="math inline">\(k\)</span>, representing the typical predictor values for that class.</li>
+<li><span class="math inline">\(\Sigma\)</span> is the covariance matrix, which describes the variability of the predictors and how they are correlated.</li>
+<li>LDF assumes that the same covariance matrix <span class="math inline">\(\Sigma\)</span> applies to every class.</li>
+</ul>
+<p>For each possible class, LDF calculates a discriminant score:</p>
+<p><span class="math display">\[
+\delta_k(\mathbf{x})
+=
+\mathbf{x}^T\Sigma^{-1}\boldsymbol{\mu}_k
+-
+\frac{1}{2}
+\boldsymbol{\mu}_k^T\Sigma^{-1}\boldsymbol{\mu}_k
++
+\log(\pi_k).
+\]</span></p>
+<p>The components of this score can be interpreted as follows:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{x}^T\Sigma^{-1}\boldsymbol{\mu}_k\)</span> measures how well the new observation matches the predictor profile of class <span class="math inline">\(k\)</span>, while accounting for predictor variability and correlation.</li>
+<li><span class="math inline">\(-\frac{1}{2}\boldsymbol{\mu}_k^T\Sigma^{-1}\boldsymbol{\mu}_k\)</span> adjusts the score for the location of the class mean.</li>
+<li><span class="math inline">\(\pi_k\)</span> is the prior probability of belonging to class <span class="math inline">\(k\)</span>, so <span class="math inline">\(\log(\pi_k)\)</span> allows more common classes to receive appropriate weight.</li>
+</ul>
+<p>The observation is assigned to the class with the largest discriminant score:</p>
+<p><span class="math display">\[
+\widehat{Y}
+=
+\underset{k}{\arg\max}\,
+\delta_k(\mathbf{x}).
+\]</span></p>
+<p>Here, <span class="math inline">\(\arg\max\)</span> simply means <strong>choose the class <span class="math inline">\(k\)</span> that produces the largest score</strong>.</p>
+<p>Because all classes are assumed to share the same covariance matrix, the resulting decision boundary is linear. LDF therefore represents a relatively smooth classification rule compared with more flexible methods such as nearest-neighbor classification.</p>
+</section>
+<section id="nearest-neighbor" class="level4" data-number="2.1.4.2">
+<h4 data-number="2.1.4.2" class="anchored" data-anchor-id="nearest-neighbor"><span class="header-section-number">2.1.4.2</span> 1-nearest neighbor</h4>
+<p>The <strong>1-nearest-neighbor (1-NN)</strong> classifier predicts the class of a new observation by finding the most similar observation in the training dataset.</p>
+<p>Similarity is usually measured using <strong>Euclidean distance</strong>:</p>
+<p><span class="math display">\[
+d(\mathbf{x}_i,\mathbf{x}_j)
+=
+\sqrt{
+\sum_{m=1}^{p}
+(x_{im}-x_{jm})^2
+}.
+\]</span></p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{x}_i\)</span> and <span class="math inline">\(\mathbf{x}_j\)</span> are two observations.</li>
+<li><span class="math inline">\(p\)</span> is the number of predictors.</li>
+<li><span class="math inline">\(x_{im}\)</span> is the value of predictor <span class="math inline">\(m\)</span> for observation <span class="math inline">\(i\)</span>.</li>
+<li><span class="math inline">\(x_{jm}\)</span> is the value of predictor <span class="math inline">\(m\)</span> for observation <span class="math inline">\(j\)</span>.</li>
+<li>For each predictor, the difference between the two observations is squared.</li>
+<li>These squared differences are added together and the square root is taken.</li>
+</ul>
+<p>For example, if there are two predictors and the observations are</p>
+<p><span class="math display">\[
+\mathbf{x}_i=(2,3)
+\qquad\text{and}\qquad
+\mathbf{x}_j=(5,7),
+\]</span></p>
+<p>then</p>
+<p><span class="math display">\[
+d(\mathbf{x}_i,\mathbf{x}_j)
+=
+\sqrt{(2-5)^2+(3-7)^2}
+=
+\sqrt{9+16}
+=
+5.
+\]</span></p>
+<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, 1-NN compares its distance with every observation in the training dataset and identifies the one with the smallest distance:</p>
+<p><span class="math display">\[
+j^*
+=
+\underset{j}{\arg\min}\,
+d(\mathbf{x}_0,\mathbf{x}_j).
+\]</span></p>
+<p>Here, <span class="math inline">\(\arg\min\)</span> means <strong>choose the training observation <span class="math inline">\(j\)</span> that gives the smallest distance</strong>. The symbol <span class="math inline">\(j^*\)</span> therefore represents the index of the nearest training observation.</p>
+<p>The new observation is then assigned the same class as that nearest neighbor:</p>
+<p><span class="math display">\[
+\widehat{Y}_0=Y_{j^*}.
+\]</span></p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\widehat{Y}_0\)</span> is the predicted class for the new observation.</li>
+<li><span class="math inline">\(Y_{j^*}\)</span> is the actual class of its nearest training observation.</li>
+</ul>
+<p>Unlike LDF, 1-NN can create highly irregular decision boundaries because its prediction can change whenever a different training observation becomes the closest one.</p>
+</section>
+<section id="nearest-neighbor-1" class="level4" data-number="2.1.4.3">
+<h4 data-number="2.1.4.3" class="anchored" data-anchor-id="nearest-neighbor-1"><span class="header-section-number">2.1.4.3</span> 3-nearest neighbor</h4>
+<p>The <strong>3-nearest-neighbor (3-NN)</strong> classifier follows the same general principle as 1-NN but uses the three closest training observations rather than only one.</p>
+<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, the distance to every training observation is calculated in the same way as for 1-NN. The three observations with the smallest distances are then selected.</p>
+<p>The predicted class is determined by <strong>majority vote</strong> among those three neighbors.</p>
+<p>For example, if the three nearest observations belong to</p>
+<p><span class="math display">\[
+\{A,A,B\},
+\]</span></p>
+<p>then two of the three neighbors belong to class <span class="math inline">\(A\)</span>, so the prediction is</p>
+<p><span class="math display">\[
+\widehat{Y}_0=A.
+\]</span></p>
+<p>In general, 3-NN can be thought of as assigning the new observation to the class that appears most frequently among its three nearest neighbors.</p>
+<p>Because the prediction depends on several nearby observations instead of only one, 3-NN is generally less sensitive to a single unusual training observation and therefore smoother than 1-NN.</p>
+<p>However, it remains a local and relatively flexible prediction rule because the classification still depends heavily on the observations located near the new data point.</p>
+<p>Including both 1-NN and 3-NN allowed the authors to examine how the prediction-error estimators behaved when the flexibility of the nearest-neighbor classifier changed.</p>
+</section>
+<section id="quadratic-discriminant-function-qdf" class="level4" data-number="2.1.4.4">
+<h4 data-number="2.1.4.4" class="anchored" data-anchor-id="quadratic-discriminant-function-qdf"><span class="header-section-number">2.1.4.4</span> Quadratic discriminant function (QDF)</h4>
+<p>The <strong>quadratic discriminant function (QDF)</strong> is closely related to LDF, but it makes a less restrictive assumption about how the predictors vary within each class.</p>
+<p>LDF assumes that all classes share the same covariance matrix:</p>
+<p><span class="math display">\[
+\mathbf{X}\mid Y=k
+\sim
+N_p(\boldsymbol{\mu}_k,\Sigma).
+\]</span></p>
+<p>QDF instead allows each class to have its own covariance matrix:</p>
+<p><span class="math display">\[
+\mathbf{X}\mid Y=k
+\sim
+N_p(\boldsymbol{\mu}_k,\Sigma_k).
+\]</span></p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\boldsymbol{\mu}_k\)</span> is the mean predictor vector for class <span class="math inline">\(k\)</span>.</li>
+<li><span class="math inline">\(\Sigma_k\)</span> is the covariance matrix for class <span class="math inline">\(k\)</span>.</li>
+<li>The subscript <span class="math inline">\(k\)</span> indicates that the pattern of variability and correlation between predictors is allowed to differ across classes.</li>
+</ul>
+<p>For each possible class, QDF calculates a discriminant score:</p>
+<p><span class="math display">\[
+\delta_k(\mathbf{x})
+=
+-\frac{1}{2}\log|\Sigma_k|
+-\frac{1}{2}
+(\mathbf{x}-\boldsymbol{\mu}_k)^T
+\Sigma_k^{-1}
+(\mathbf{x}-\boldsymbol{\mu}_k)
++
+\log(\pi_k).
+\]</span></p>
+<p>The main components can be interpreted as follows:</p>
+<ul>
+<li><span class="math inline">\((\mathbf{x}-\boldsymbol{\mu}_k)\)</span> measures how far the new observation is from the mean of class <span class="math inline">\(k\)</span>.</li>
+<li><span class="math inline">\(\Sigma_k^{-1}\)</span> adjusts that distance for the variability and correlations within class <span class="math inline">\(k\)</span>.</li>
+<li><span class="math inline">\(|\Sigma_k|\)</span> is the determinant of the covariance matrix and reflects the overall spread of the class distribution.</li>
+<li><span class="math inline">\(\pi_k\)</span> is the prior probability of belonging to class <span class="math inline">\(k\)</span>.</li>
+</ul>
+<p>The observation is assigned to the class with the largest discriminant score:</p>
+<p><span class="math display">\[
+\widehat{Y}
+=
+\underset{k}{\arg\max}\,
+\delta_k(\mathbf{x}).
+\]</span></p>
+<p>As before, <span class="math inline">\(\arg\max\)</span> simply means <strong>choose the class that produces the largest score</strong>.</p>
+<p>The key difference from LDF is that QDF allows <span class="math inline">\(\Sigma_k\)</span> to differ between classes. Because the covariance structure is no longer shared, the quadratic terms do not cancel, and the resulting decision boundary can be curved rather than linear.</p>
+<p>QDF is therefore more flexible than LDF, but it also requires estimating more parameters from the training data.</p>
+</section>
+<section id="why-use-several-different-classifiers" class="level4" data-number="2.1.4.5">
+<h4 data-number="2.1.4.5" class="anchored" data-anchor-id="why-use-several-different-classifiers"><span class="header-section-number">2.1.4.5</span> Why use several different classifiers?</h4>
+<p>The classifiers used in the experiments represent prediction rules with different levels of smoothness, flexibility, and stability.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Prediction rule</th>
+<th>General behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LDF</td>
+<td>Relatively smooth, linear decision boundary</td>
+</tr>
+<tr class="even">
+<td>1-NN</td>
+<td>Highly local and flexible</td>
+</tr>
+<tr class="odd">
+<td>3-NN</td>
+<td>Local but smoother than 1-NN</td>
+</tr>
+<tr class="even">
+<td>Classification tree</td>
+<td>Flexible and potentially unstable</td>
+</tr>
+<tr class="odd">
+<td>QDF</td>
+<td>More flexible discriminant rule with quadratic boundaries</td>
+</tr>
+</tbody>
+</table>
+<p>This diversity was important because the authors were not only interested in whether .632+ worked for one particular classifier. They wanted to determine whether its bias and variability advantages remained useful across prediction problems with substantially different types of prediction rules.</p>
+<p>Using classifiers with different levels of flexibility also allowed the authors to examine how the error estimators behaved when the underlying prediction rule was more or less prone to overfitting or instability.</p>
+</section>
+</section>
+<section id="bootstrap-implementation" class="level3" data-number="2.1.5">
+<h3 data-number="2.1.5" class="anchored" data-anchor-id="bootstrap-implementation"><span class="header-section-number">2.1.5</span> Bootstrap implementation</h3>
+<p>For each training dataset, the authors generated multiple bootstrap samples and used them to estimate prediction error. In the simulation experiments, each bootstrap-based estimate used</p>
+<p><span class="math display">\[
+B = 50
+\]</span></p>
+<p>bootstrap replications.</p>
+<p>Each bootstrap sample contained <span class="math inline">\(n\)</span> draws with replacement from the original training dataset of <span class="math inline">\(n\)</span> observations. Because sampling is performed with replacement, some observations may appear multiple times in a bootstrap sample, while others may not appear at all.</p>
+<p>The prediction rule was fitted separately to each bootstrap sample.</p>
+<p>The important feature of the procedure is that an original observation was evaluated only using bootstrap samples in which that observation had <strong>not</strong> been selected. This ensures that the observation being tested was not used to train that particular model.</p>
+<p>Suppose the original training dataset is</p>
+<p><span class="math display">\[
+\mathcal{D}
+=
+\{(\mathbf{x}_i,y_i)\}_{i=1}^{n},
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf{x}_i\)</span> represents the predictor values for observation <span class="math inline">\(i\)</span> and <span class="math inline">\(y_i\)</span> represents its true class.</p>
+<p>Let</p>
+<p><span class="math display">\[
+\mathcal{D}^{*b}
+\]</span></p>
+<p>represent bootstrap sample <span class="math inline">\(b\)</span>, where</p>
+<p><span class="math display">\[
+b=1,\ldots,B.
+\]</span></p>
+<p>The asterisk indicates that this is a resampled version of the original dataset, and <span class="math inline">\(b\)</span> identifies which bootstrap replication is being considered.</p>
+<p>For each original observation <span class="math inline">\(i\)</span>, define</p>
+<p><span class="math display">\[
+I_i^b
+=
+\begin{cases}
+1, &amp; \text{if observation } i \text{ is absent from bootstrap sample } b,\\
+0, &amp; \text{if observation } i \text{ is included in bootstrap sample } b.
+\end{cases}
+\]</span></p>
+<p>Thus, <span class="math inline">\(I_i^b\)</span> tells us whether observation <span class="math inline">\(i\)</span> can be used as a test observation for bootstrap sample <span class="math inline">\(b\)</span>.</p>
+<p>If</p>
+<p><span class="math display">\[
+I_i^b=1,
+\]</span></p>
+<p>the model fitted using bootstrap sample <span class="math inline">\(b\)</span> is used to predict observation <span class="math inline">\(i\)</span>.</p>
+<p>For classification with 0-1 loss, define the prediction error as</p>
+<p><span class="math display">\[
+Q_i^b
+=
+\begin{cases}
+1, &amp; \text{if the model predicts observation } i \text{ incorrectly},\\
+0, &amp; \text{if the prediction is correct}.
+\end{cases}
+\]</span></p>
+<p>For each original observation, the prediction errors are then averaged across only the bootstrap samples in which that observation was omitted:</p>
+<p><span class="math display">\[
+\widehat{e}_i
+=
+\frac{
+\sum_{b=1}^{B} I_i^b Q_i^b
+}{
+\sum_{b=1}^{B} I_i^b
+}.
+\]</span></p>
+<p>The numerator,</p>
+<p><span class="math display">\[
+\sum_{b=1}^{B} I_i^b Q_i^b,
+\]</span></p>
+<p>counts the prediction errors for observation <span class="math inline">\(i\)</span> across bootstrap samples in which it was left out.</p>
+<p>The denominator,</p>
+<p><span class="math display">\[
+\sum_{b=1}^{B} I_i^b,
+\]</span></p>
+<p>counts how many bootstrap samples left observation <span class="math inline">\(i\)</span> out.</p>
+<p>Their ratio therefore represents the average prediction error for observation <span class="math inline">\(i\)</span> when it was evaluated using models that had not been trained on it.</p>
+<p>Finally, these observation-specific errors are averaged across all <span class="math inline">\(n\)</span> original observations:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}^{(1)}
+=
+\frac{1}{n}
+\sum_{i=1}^{n}
+\widehat{e}_i.
+\]</span></p>
+<p>This gives the <strong>leave-one-out bootstrap error</strong>.</p>
+<p>Conceptually, this procedure is similar to cross-validation because an observation is evaluated only by models that were trained without that observation. The difference is that bootstrap estimation repeatedly resamples the training dataset with replacement and averages prediction errors across many different resampled training sets.</p>
+<p>The complete bootstrap procedure can therefore be summarized as:</p>
+<ol type="1">
+<li>Draw a bootstrap sample of size <span class="math inline">\(n\)</span> from the original training dataset with replacement.</li>
+<li>Fit the prediction rule using that bootstrap sample.</li>
+<li>Identify the original observations that were not selected in the bootstrap sample.</li>
+<li>Use the fitted model to predict those omitted observations.</li>
+<li>Record whether each prediction is correct or incorrect.</li>
+<li>Repeat the process for <span class="math inline">\(B=50\)</span> bootstrap samples.</li>
+<li>For each original observation, average its prediction errors across the bootstrap samples in which it was omitted.</li>
+<li>Average these observation-level errors to obtain <span class="math inline">\(\widehat{\mathrm{Err}}^{(1)}\)</span>.</li>
+</ol>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A["Original training dataset of n observations"] --&gt; B["Draw bootstrap sample of size n with replacement"]
+    B --&gt; C["Fit prediction rule to bootstrap sample"]
+    C --&gt; D["Identify observations omitted from this bootstrap sample"]
+    D --&gt; E["Predict the omitted observations"]
+    E --&gt; F["Record 0-1 prediction errors"]
+    F --&gt; G["Repeat for B = 50 bootstrap samples"]
+    G --&gt; H["Average errors for each observation across samples where it was omitted"]
+    H --&gt; I["Average across all observations"]
+    I --&gt; J["Leave-one-out bootstrap error"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>Once <span class="math inline">\(\widehat{\mathrm{Err}}^{(1)}\)</span> has been calculated, it can be combined with the apparent training error to obtain the original .632 estimate:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}
+=
+0.368\,\mathrm{err}
++
+0.632\,\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(\mathrm{err}\)</span> is the <strong>apparent training error</strong>, calculated on the same observations used to fit the model.</li>
+<li><span class="math inline">\(\widehat{\mathrm{Err}}^{(1)}\)</span> is the <strong>leave-one-out bootstrap error</strong>, calculated using observations that were omitted from the bootstrap samples used for training.</li>
+</ul>
+<p>The apparent training error is usually optimistic, while the leave-one-out bootstrap error can be somewhat pessimistic. The .632 estimator combines the two, giving 36.8% weight to the apparent training error and 63.2% weight to the bootstrap error.</p>
+<p>However, this fixed weighting can still produce an overly optimistic estimate when the model strongly overfits the training data.</p>
+<p>To address this problem, the .632+ estimator first measures the degree of overfitting using the <strong>relative overfitting rate</strong>, <span class="math inline">\(R\)</span>:</p>
+<p><span class="math display">\[
+R
+=
+\frac{
+\widehat{\mathrm{Err}}^{(1)}-\mathrm{err}
+}{
+\gamma-\mathrm{err}
+}.
+\]</span></p>
+<p>Here, <span class="math inline">\(\gamma\)</span> represents the <strong>no-information error rate</strong>, or the error expected if the predictors contained no useful information about the outcome.</p>
+<p>Conceptually:</p>
+<ul>
+<li><span class="math inline">\(R\approx0\)</span> indicates little evidence of overfitting.</li>
+<li><span class="math inline">\(R\approx1\)</span> indicates severe overfitting, where performance on unseen observations approaches the no-information error level.</li>
+</ul>
+<p>The value of <span class="math inline">\(R\)</span> is then used to calculate an adaptive bootstrap weight:</p>
+<p><span class="math display">\[
+w
+=
+\frac{0.632}{1-0.368R}.
+\]</span></p>
+<p>When there is little overfitting and <span class="math inline">\(R\)</span> is close to 0,</p>
+<p><span class="math display">\[
+w\approx0.632,
+\]</span></p>
+<p>so the .632+ estimator behaves similarly to the original .632 estimator.</p>
+<p>As overfitting becomes more severe and <span class="math inline">\(R\)</span> approaches 1,</p>
+<p><span class="math display">\[
+w\rightarrow1.
+\]</span></p>
+<p>The .632+ estimator therefore places progressively more weight on the bootstrap error and less weight on the potentially overly optimistic training error.</p>
+<p>The final .632+ estimate is</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632+}
+=
+(1-w)\mathrm{err}
++
+w\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p>Thus, the same set of bootstrap replications first provides the leave-one-out bootstrap error, which is then used to calculate both the .632 and .632+ prediction-error estimates. The key difference is that .632 uses fixed weights, whereas .632+ adapts the weights according to the estimated degree of overfitting.</p>
+</section>
+<section id="main-findings" class="level3" data-number="2.1.6">
+<h3 data-number="2.1.6" class="anchored" data-anchor-id="main-findings"><span class="header-section-number">2.1.6</span> Main findings</h3>
+<p>The results showed that no single method was best in every respect. Cross-validation tended to have relatively low bias, while bootstrap-based methods generally produced less variable estimates of prediction error.</p>
+<section id="bootstrap-smoothing-reduced-variability" class="level4" data-number="2.1.6.1">
+<h4 data-number="2.1.6.1" class="anchored" data-anchor-id="bootstrap-smoothing-reduced-variability"><span class="header-section-number">2.1.6.1</span> Bootstrap smoothing reduced variability</h4>
+<p>The first important finding was that the leave-one-out bootstrap estimate, <span class="math inline">\(\widehat{\mathrm{Err}}^{(1)}\)</span>, was consistently less variable than leave-one-out cross-validation.</p>
+<p>Across the 24 experiments, the median ratio of the standard deviation of the bootstrap estimate to the standard deviation of the cross-validation estimate was</p>
+<p><span class="math display">\[
+\frac{
+SD\left(\widehat{\mathrm{Err}}^{(1)}\right)
+}{
+SD\left(\widehat{\mathrm{Err}}_{\mathrm{CV}}\right)
+}
+=
+0.79.
+\]</span></p>
+<p>This means that the bootstrap error estimate typically had substantially lower variability than leave-one-out cross-validation.</p>
+<p>The authors noted that this reduction in variability was roughly equivalent to increasing the training sample size by about 60%.</p>
+<p><img src="images/B-Fig2.png" class="img-fluid" alt="Comparison of the variability and expectation of leave-one-out bootstrap and cross-validation across the 24 experiments"></p>
+<p><em>Source: Efron &amp; Tibshirani (1997), Figure 2.</em></p>
+<p>However, the bootstrap estimate was not unbiased. The average bootstrap error tended to be slightly higher than the cross-validation error, illustrating the trade-off between reduced variability and increased bias.</p>
+</section>
+<section id="the-original-.632-estimator-could-be-too-optimistic" class="level4" data-number="2.1.6.2">
+<h4 data-number="2.1.6.2" class="anchored" data-anchor-id="the-original-.632-estimator-could-be-too-optimistic"><span class="header-section-number">2.1.6.2</span> The original .632 estimator could be too optimistic</h4>
+<p>The original .632 estimator reduced the upward bias of the leave-one-out bootstrap estimate by combining it with the apparent training error.</p>
+<p>However, in prediction rules that strongly overfit the training data, particularly nearest-neighbor classifiers, the .632 estimator could become substantially biased downward.</p>
+<p>This occurred because the apparent training error could be extremely small even when prediction performance on new data was poor. The fixed 36.8% weight placed on this optimistic training error could therefore pull the .632 estimate too far downward.</p>
+<p>The .632+ estimator was designed to reduce this problem by increasing the weight placed on the bootstrap error when evidence of overfitting was strong.</p>
+</section>
+<section id="improved-the-biasvariance-compromise" class="level4" data-number="2.1.6.3">
+<h4 data-number="2.1.6.3" class="anchored" data-anchor-id="improved-the-biasvariance-compromise"><span class="header-section-number">2.1.6.3</span> .632+ improved the bias–variance compromise</h4>
+<p>Across the simulation experiments, the .632+ estimator generally provided a compromise between the upward bias of the leave-one-out bootstrap estimator and the downward bias that could occur with the original .632 estimator.</p>
+<p><img src="images/B-Fig3.png" class="img-fluid" alt="Relative bias of the leave-one-out bootstrap, .632 estimator, and .632+ estimator across the simulation experiments"></p>
+<p><em>Source: Efron &amp; Tibshirani (1997), Figure 3.</em></p>
+<p>The purpose of the adaptive weighting in .632+ was therefore not to eliminate bias completely, but to prevent the strong optimistic bias that could occur with .632 while retaining much of the reduction in variability obtained through bootstrap smoothing.</p>
+</section>
+<section id="had-the-lowest-overall-estimation-error" class="level4" data-number="2.1.6.4">
+<h4 data-number="2.1.6.4" class="anchored" data-anchor-id="had-the-lowest-overall-estimation-error"><span class="header-section-number">2.1.6.4</span> .632+ had the lowest overall estimation error</h4>
+<p>Because an estimator can have low bias but still perform poorly if it is highly variable, the authors also compared the methods using root mean squared error (RMS).</p>
+<p>Across the 24 experiments, the .632+ estimator was the best overall performer in terms of RMS error.</p>
+<p>The authors compared the RMS error of .632+ with that of leave-one-out cross-validation using</p>
+<p><span class="math display">\[
+\frac{
+RMS\left(\widehat{\mathrm{Err}}_{.632+}\right)
+}{
+RMS\left(\widehat{\mathrm{Err}}_{\mathrm{CV}}\right)
+}.
+\]</span></p>
+<p>The median value of this ratio across the 24 experiments was</p>
+<p><span class="math display">\[
+0.78.
+\]</span></p>
+<p>A value below 1 indicates that .632+ had lower RMS error than leave-one-out cross-validation. A median ratio of 0.78 therefore indicates that the overall estimation error of .632+ was substantially smaller across the experiments.</p>
+<p><img src="images/B-Fig4.png" class="img-fluid" alt="Ratio of RMS error for the .632+ estimator compared with leave-one-out cross-validation across the 24 experiments"></p>
+<p><em>Source: Efron &amp; Tibshirani (1997), Figure 4.</em></p>
+<p>Overall, the results suggest that the main advantage of .632+ was not that it was completely unbiased. Instead, it achieved a better balance between bias and variability, resulting in lower overall prediction-error estimation error across a wide range of classification problems.</p>
+</section>
+</section>
+<section id="main-conclusion-stop-doing-x-start-doing-y" class="level3" data-number="2.1.7">
+<h3 data-number="2.1.7" class="anchored" data-anchor-id="main-conclusion-stop-doing-x-start-doing-y"><span class="header-section-number">2.1.7</span> Main conclusion: stop doing X, start doing Y</h3>
+<p><strong>Stop:</strong> assuming that an approximately unbiased prediction-error estimator is necessarily the best estimator if its estimates are highly variable, and avoid relying on the original .632 estimator when strong overfitting may make the apparent training error extremely optimistic.</p>
+<p><strong>Start:</strong> consider the .632+ bootstrap estimator as a way to obtain a better balance between bias and variability, particularly when the prediction rule may be unstable or prone to overfitting.</p>
+<p><strong>Takeaway:</strong> In the authors’ simulation experiments, the .632+ estimator was the best overall performer, combining relatively low variability with only moderate bias. Its main advantage was not that it completely eliminated bias, but that its adaptive weighting produced a better overall bias–variance compromise than the competing methods.</p>
+<p>The authors nevertheless caution that these conclusions are based on a finite set of simulation experiments and should not be interpreted as evidence that .632+ will necessarily outperform cross-validation in every prediction problem.</p>
+</section>
+<section id="proposed-computational-exploration" class="level3" data-number="2.1.8">
+<h3 data-number="2.1.8" class="anchored" data-anchor-id="proposed-computational-exploration"><span class="header-section-number">2.1.8</span> Proposed computational exploration</h3>
+<p>To illustrate the main argument of Efron and Tibshirani, I will simulate a simple <strong>no-information binary classification problem</strong> using a 1-nearest-neighbor classifier. This simulation is designed as a simplified reproduction of <strong>Experiment 8</strong> from Efron and Tibshirani, which used a 1-nearest-neighbor classifier with <span class="math inline">\(n=20\)</span>, two predictors, and a no-information data-generating process in which the true prediction error was 0.50.</p>
+<p>Each simulated dataset will contain <span class="math inline">\(n=20\)</span> observations and two normally distributed predictors. The binary outcome will be generated independently of the predictors, so there is no true predictive signal and the true prediction error is</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+<p>For each simulated dataset, I will calculate:</p>
+<ul>
+<li>the apparent training error,</li>
+<li>leave-one-out cross-validation error,</li>
+<li>leave-one-out bootstrap error using <span class="math inline">\(B=50\)</span> bootstrap samples,</li>
+<li>the .632 estimate,</li>
+<li>and the .632+ estimate.</li>
+</ul>
+<p>The complete simulation will be repeated 500 times using independently generated datasets. Repeating the experiment allows the behavior of each prediction-error estimator to be evaluated across samples.</p>
+<p>Following the general evaluation approach used by Efron and Tibshirani, the estimators will be compared using:</p>
+<ul>
+<li><strong>Exp:</strong> the average estimated prediction error across simulations,</li>
+<li><strong>SD:</strong> the standard deviation of the estimates across simulations,</li>
+<li><strong>RMS:</strong> the root mean squared error relative to the known true error.</li>
+</ul>
+<p>Bias will also be calculated as</p>
+<p><span class="math display">\[
+\mathrm{Bias}
+=
+\mathrm{Exp}
+-
+\mathrm{Err},
+\]</span></p>
+<p>to show whether each estimator tends to overestimate or underestimate the true prediction error.</p>
+<p>This exploration is intended to demonstrate how strong overfitting can make the original .632 estimator overly optimistic and how the adaptive weighting of .632+ can improve the overall bias–variance compromise.</p>
+</section>
+<section id="planned-figure" class="level3" data-number="2.1.9">
+<h3 data-number="2.1.9" class="anchored" data-anchor-id="planned-figure"><span class="header-section-number">2.1.9</span> Planned figure</h3>
+<p>The main figure will compare the distributions of the four prediction-error estimators across the repeated simulations:</p>
+<p><span class="math display">\[
+\text{LOOCV},
+\qquad
+\widehat{\mathrm{Err}}^{(1)},
+\qquad
+\widehat{\mathrm{Err}}_{.632},
+\qquad
+\widehat{\mathrm{Err}}_{.632+}.
+\]</span></p>
+<p>A vertical reference line at</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50
+\]</span></p>
+<p>will indicate the known true prediction error. The location of each distribution relative to this line will illustrate bias, while the spread of each distribution will illustrate variability.</p>
+</section>
+<section id="computational-exploration" class="level3" data-number="2.1.10">
+<h3 data-number="2.1.10" class="anchored" data-anchor-id="computational-exploration"><span class="header-section-number">2.1.10</span> Computational exploration</h3>
+<section id="phase-1-define-the-functions-used-in-the-simulation" class="level4" data-number="2.1.10.1">
+<h4 data-number="2.1.10.1" class="anchored" data-anchor-id="phase-1-define-the-functions-used-in-the-simulation"><span class="header-section-number">2.1.10.1</span> Phase 1: Define the functions used in the simulation</h4>
+<p>The computational exploration requires two functions. The first performs prediction using a <strong>1-nearest-neighbor (1-NN)</strong> classifier. The second generates one no-information dataset and calculates all prediction-error estimates for that dataset.</p>
+<section id="nn-prediction-function" class="level5" data-number="2.1.10.1.1">
+<h5 data-number="2.1.10.1.1" class="anchored" data-anchor-id="nn-prediction-function"><span class="header-section-number">2.1.10.1.1</span> 1-NN prediction function</h5>
+<p>For a new observation <span class="math inline">\(\mathbf{x}_0\)</span>, 1-NN compares it with every training observation <span class="math inline">\(\mathbf{x}_j\)</span> using Euclidean distance:</p>
+<p><span class="math display">\[
+d(\mathbf{x}_0,\mathbf{x}_j)
+=
+\sqrt{
+\sum_{m=1}^{p}
+(x_{0m}-x_{jm})^2
+}.
+\]</span></p>
+<p>The nearest training observation is</p>
+<p><span class="math display">\[
+j^*
+=
+\underset{j}{\arg\min}\,
+d(\mathbf{x}_0,\mathbf{x}_j),
+\]</span></p>
+<p>and the predicted class is</p>
+<p><span class="math display">\[
+\widehat{Y}_0
+=
+Y_{j^*}.
+\]</span></p>
+<p>Because taking the square root does not change which distance is smallest, the code uses <strong>squared Euclidean distance</strong>:</p>
+<p><span class="math display">\[
+d^2(\mathbf{x}_0,\mathbf{x}_j)
+=
+\sum_{m=1}^{p}
+(x_{0m}-x_{jm})^2.
+\]</span></p>
+<p>The prediction function therefore performs four steps:</p>
+<ol type="1">
+<li>Compare the new observation with every training observation.</li>
+<li>Calculate the squared Euclidean distance to each training observation.</li>
+<li>Identify the observation with the smallest distance.</li>
+<li>Assign the new observation the class of that nearest neighbor.</li>
+</ol>
+</section>
+<section id="one-complete-simulation" class="level5" data-number="2.1.10.1.2">
+<h5 data-number="2.1.10.1.2" class="anchored" data-anchor-id="one-complete-simulation"><span class="header-section-number">2.1.10.1.2</span> One complete simulation</h5>
+<p>The second function, <code>run_one_simulation()</code>, defines the complete procedure that will be carried out for <strong>one simulated dataset</strong>.</p>
+<p>For each dataset, the function:</p>
+<ol type="1">
+<li>generates <span class="math inline">\(n=20\)</span> observations from a no-information binary classification problem,</li>
+<li>calculates the apparent training error,</li>
+<li>calculates leave-one-out cross-validation error,</li>
+<li>calculates leave-one-out bootstrap error using <span class="math inline">\(B=50\)</span> bootstrap samples,</li>
+<li>calculates the original .632 estimate,</li>
+<li>calculates the .632+ estimate, including <span class="math inline">\(\widehat{\gamma}\)</span>, <span class="math inline">\(R\)</span>, and the adaptive weight <span class="math inline">\(w\)</span>,</li>
+<li>returns all of these quantities for that simulated dataset.</li>
+</ol>
+<p>At this stage, the function only defines how <strong>one experiment</strong> is performed. In later phases, this entire function will be repeated across 500 independently generated datasets.</p>
+<p>Repeating the experiment will allow the estimators to be compared across samples using <strong>Exp</strong>, <strong>SD</strong>, and <strong>RMS</strong>, as described in the proposed computational exploration, with the known true prediction error</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+<p>First, two predictors are generated independently from standard normal distributions:</p>
+<p><span class="math display">\[
+X_{i1},X_{i2}\sim N(0,1).
+\]</span></p>
+<p>The binary outcome is generated independently of the predictors:</p>
+<p><span class="math display">\[
+Y_i\sim\mathrm{Bernoulli}(0.50).
+\]</span></p>
+<p>Because the outcome is independent of the predictors, the dataset contains <strong>no predictive signal</strong>. The population-level prediction error for this balanced two-class problem is therefore</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+<p>The function then calculates the following error estimates.</p>
+<p><strong>Apparent training error</strong></p>
+<p>The 1-NN classifier is evaluated on the same observations used to train it:</p>
+<p><span class="math display">\[
+\mathrm{err}
+=
+\frac{1}{n}
+\sum_{i=1}^{n}
+I(\widehat{Y}_i\neq Y_i).
+\]</span></p>
+<p>Because each training observation is its own nearest neighbor, its distance from itself is zero. The apparent training error is therefore expected to be approximately</p>
+<p><span class="math display">\[
+\mathrm{err}=0.
+\]</span></p>
+<p><strong>Leave-one-out cross-validation</strong></p>
+<p>For each observation <span class="math inline">\(i\)</span>, the classifier is trained using the other <span class="math inline">\(n-1\)</span> observations and then used to predict the omitted observation:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{CV}}
+=
+\frac{1}{n}
+\sum_{i=1}^{n}
+I(\widehat{Y}_i^{(-i)}\neq Y_i).
+\]</span></p>
+<p>Here, <span class="math inline">\(\widehat{Y}_i^{(-i)}\)</span> represents the prediction for observation <span class="math inline">\(i\)</span> from a model trained without that observation.</p>
+<p><strong>Leave-one-out bootstrap error</strong></p>
+<p>For each of</p>
+<p><span class="math display">\[
+B=50
+\]</span></p>
+<p>bootstrap replications, <span class="math inline">\(n\)</span> observations are sampled with replacement from the original dataset.</p>
+<p>The classifier is fitted to the bootstrap sample and evaluated only on original observations that were omitted from that sample. Prediction errors are averaged for each observation across the bootstrap samples in which it was omitted, and these observation-level errors are then averaged to obtain</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p><strong>Original .632 estimator</strong></p>
+<p>The apparent training error and bootstrap error are combined as</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}
+=
+0.368\,\mathrm{err}
++
+0.632\,\widehat{\mathrm{Err}}^{(1)}.
+\]</span></p>
+<p>Because the apparent error for 1-NN is approximately zero in this setting, the .632 estimate may be pulled substantially below the true error of 0.50.</p>
+<p><strong>.632+ estimator</strong></p>
+<p>The .632+ estimator additionally measures the degree of overfitting.</p>
+<p>For binary nearest-neighbor classification, the no-information error rate can be estimated from the observed proportion of class-1 outcomes, <span class="math inline">\(\widehat p\)</span>, using</p>
+<p><span class="math display">\[
+\widehat{\gamma}
+=
+2\widehat{p}(1-\widehat{p}).
+\]</span></p>
+<p>For the implementation used in the simulation experiments, the bootstrap error is first limited by the estimated no-information error:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}
+=
+\min\left(
+\widehat{\mathrm{Err}}^{(1)},
+\widehat{\gamma}
+\right).
+\]</span></p>
+<p>The relative overfitting rate is then calculated using this adjusted bootstrap error:</p>
+<p><span class="math display">\[
+R
+=
+\frac{
+\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}-\mathrm{err}
+}{
+\widehat{\gamma}-\mathrm{err}
+}.
+\]</span></p>
+<p>If the bootstrap error does not exceed the apparent error, <span class="math inline">\(R\)</span> is set to 0. Otherwise, the adjustment above keeps <span class="math inline">\(R\)</span> between 0 and 1.</p>
+<p>The adaptive weight is</p>
+<p><span class="math display">\[
+w
+=
+\frac{0.632}{1-0.368R},
+\]</span></p>
+<p>and the final estimate is</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632+}
+=
+(1-w)\mathrm{err}
++
+w\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}.
+\]</span></p>
+<p>As overfitting becomes more severe, <span class="math inline">\(R\)</span> approaches 1 and <span class="math inline">\(w\)</span> approaches 1. The .632+ estimator therefore places progressively less weight on the overly optimistic apparent training error.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>predict_1nn <span class="ot">&lt;-</span> <span class="cf">function</span>(train_x, train_y, test_x) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Creates a function for making predictions with 1-nearest-neighbor.</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># train_x = predictor values for the training observations.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># train_y = known class labels for the training observations.</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># test_x  = predictor values for observations to be predicted.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  train_x <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(train_x)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Converts the training predictors to a numeric matrix.</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  test_x <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(test_x)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Converts the test predictors to the same matrix format.</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">apply</span>(test_x, <span class="dv">1</span>, <span class="cf">function</span>(x0) {</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Runs the following calculations separately for every row of test_x.</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># x0 represents the predictor values for one test observation.</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    differences <span class="ot">&lt;-</span> <span class="fu">sweep</span>(</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>      train_x,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>      <span class="dv">2</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>      x0,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">FUN =</span> <span class="st">"-"</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Subtracts the predictor values of x0 from every training observation.</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    squared_differences <span class="ot">&lt;-</span> differences<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Squares each predictor difference.</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    distances_squared <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>      squared_differences</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Adds the squared differences across predictors for each training</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># observation, producing squared Euclidean distance:</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># d_j^2 = sum_m (x_jm - x_0m)^2</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    nearest <span class="ot">&lt;-</span> <span class="fu">which.min</span>(</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>      distances_squared</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Finds the index of the training observation with the smallest distance.</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    prediction <span class="ot">&lt;-</span> train_y[nearest]</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Assigns the class label of the nearest training observation.</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    prediction</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Returns the predicted class.</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>run_one_simulation <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n =</span> <span class="dv">20</span>, <span class="at">B =</span> <span class="dv">50</span>) {</span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Runs the complete prediction-error experiment on one simulated dataset.</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>  <span class="co"># n = number of observations.</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>  <span class="co"># B = number of bootstrap replications.</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 1. Generate a no-information dataset</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>  X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rnorm</span>(n <span class="sc">*</span> <span class="dv">2</span>),</span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">nrow =</span> n,</span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">ncol =</span> <span class="dv">2</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generates n observations for two independent standard-normal predictors.</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(</span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>    n,</span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">1</span>,</span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">prob =</span> <span class="fl">0.50</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generates a binary outcome with equal probability of 0 and 1.</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>  <span class="co"># y is generated independently of X, so there is no predictive signal.</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 2. Calculate apparent training error</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>  training_predictions <span class="ot">&lt;-</span> <span class="fu">predict_1nn</span>(</span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>    <span class="at">train_x =</span> X,</span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>    <span class="at">train_y =</span> y,</span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>    <span class="at">test_x =</span> X</span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fits/evaluates 1-NN using the same observations for training and testing.</span></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>  apparent_error <span class="ot">&lt;-</span> <span class="fu">mean</span>(</span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>    training_predictions <span class="sc">!=</span> y</span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates the proportion of training observations classified incorrectly.</span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 3. Calculate leave-one-out cross-validation error</span></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>  loo_predictions <span class="ot">&lt;-</span> <span class="fu">sapply</span>(</span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span><span class="sc">:</span>n,</span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(i) {</span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a>      <span class="fu">predict_1nn</span>(</span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a>        <span class="at">train_x =</span> X[<span class="sc">-</span>i, , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a>        <span class="at">train_y =</span> y[<span class="sc">-</span>i],</span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>        <span class="at">test_x =</span> X[i, , <span class="at">drop =</span> <span class="cn">FALSE</span>]</span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Removes observation i from the training dataset</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>      <span class="co"># and then predicts the omitted observation.</span></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Repeats the leave-one-out prediction for every observation.</span></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a>  loocv_error <span class="ot">&lt;-</span> <span class="fu">mean</span>(</span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>    loo_predictions <span class="sc">!=</span> y</span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates the proportion of LOOCV predictions that are incorrect.</span></span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 4. Calculate leave-one-out bootstrap error</span></span>
+<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>  error_sum <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Creates one running error total for each original observation.</span></span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>  omitted_count <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Counts how many bootstrap samples omit each original observation.</span></span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (b <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B) {</span>
+<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Repeats the bootstrap procedure B times.</span></span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a>    bootstrap_index <span class="ot">&lt;-</span> <span class="fu">sample</span>(</span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a>      <span class="dv">1</span><span class="sc">:</span>n,</span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a>      <span class="at">size =</span> n,</span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a>      <span class="at">replace =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Draws n observations from the original dataset with replacement.</span></span>
+<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a>    omitted <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(</span>
+<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a>      <span class="dv">1</span><span class="sc">:</span>n,</span>
+<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unique</span>(bootstrap_index)</span>
+<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Identifies original observations not selected in this bootstrap sample.</span></span>
+<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(omitted) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Continues only when at least one observation was omitted.</span></span>
+<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a>      bootstrap_predictions <span class="ot">&lt;-</span> <span class="fu">predict_1nn</span>(</span>
+<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a>        <span class="at">train_x =</span> X[bootstrap_index, , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a>        <span class="at">train_y =</span> y[bootstrap_index],</span>
+<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a>        <span class="at">test_x =</span> X[omitted, , <span class="at">drop =</span> <span class="cn">FALSE</span>]</span>
+<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Fits 1-NN using the bootstrap sample and predicts the omitted observations.</span></span>
+<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a>      bootstrap_errors <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(</span>
+<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a>        bootstrap_predictions <span class="sc">!=</span> y[omitted]</span>
+<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Records 1 for an incorrect prediction and 0 for a correct prediction.</span></span>
+<span id="cb2-158"><a href="#cb2-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a>      error_sum[omitted] <span class="ot">&lt;-</span></span>
+<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a>        error_sum[omitted] <span class="sc">+</span> bootstrap_errors</span>
+<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Adds the errors to the running total for each omitted observation.</span></span>
+<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a>      omitted_count[omitted] <span class="ot">&lt;-</span></span>
+<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a>        omitted_count[omitted] <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb2-165"><a href="#cb2-165" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Records that each omitted observation received another test prediction.</span></span>
+<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-167"><a href="#cb2-167" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a>  observation_errors <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
+<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a>    omitted_count <span class="sc">&gt;</span> <span class="dv">0</span>,</span>
+<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a>    error_sum <span class="sc">/</span> omitted_count,</span>
+<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a>    <span class="cn">NA_real_</span></span>
+<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a>  <span class="co"># For each observation, calculates its average prediction error across</span></span>
+<span id="cb2-175"><a href="#cb2-175" aria-hidden="true" tabindex="-1"></a>  <span class="co"># bootstrap samples in which it was omitted.</span></span>
+<span id="cb2-176"><a href="#cb2-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-177"><a href="#cb2-177" aria-hidden="true" tabindex="-1"></a>  bootstrap_error <span class="ot">&lt;-</span> <span class="fu">mean</span>(</span>
+<span id="cb2-178"><a href="#cb2-178" aria-hidden="true" tabindex="-1"></a>    observation_errors,</span>
+<span id="cb2-179"><a href="#cb2-179" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-180"><a href="#cb2-180" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-181"><a href="#cb2-181" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Averages the observation-specific errors to obtain Err^(1).</span></span>
+<span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 5. Calculate the original .632 estimator</span></span>
+<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a>  error_632 <span class="ot">&lt;-</span></span>
+<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.368</span> <span class="sc">*</span> apparent_error <span class="sc">+</span></span>
+<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.632</span> <span class="sc">*</span> bootstrap_error</span>
+<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Combines the apparent training error and leave-one-out bootstrap error.</span></span>
+<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-194"><a href="#cb2-194" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 6. Calculate the .632+ estimator</span></span>
+<span id="cb2-196"><a href="#cb2-196" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-197"><a href="#cb2-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-198"><a href="#cb2-198" aria-hidden="true" tabindex="-1"></a>  p1 <span class="ot">&lt;-</span> <span class="fu">mean</span>(y <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb2-199"><a href="#cb2-199" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates the observed proportion belonging to class 1.</span></span>
+<span id="cb2-200"><a href="#cb2-200" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-201"><a href="#cb2-201" aria-hidden="true" tabindex="-1"></a>  gamma <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> p1 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> p1)</span>
+<span id="cb2-202"><a href="#cb2-202" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Estimates the no-information error rate for binary 1-NN.</span></span>
+<span id="cb2-203"><a href="#cb2-203" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a>  bootstrap_adjusted <span class="ot">&lt;-</span> <span class="fu">min</span>(</span>
+<span id="cb2-205"><a href="#cb2-205" aria-hidden="true" tabindex="-1"></a>    bootstrap_error,</span>
+<span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a>    gamma</span>
+<span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The paper caps the leave-one-out bootstrap error at the</span></span>
+<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a>  <span class="co"># estimated no-information error when calculating .632+.</span></span>
+<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (</span>
+<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a>    bootstrap_error <span class="sc">&gt;</span> apparent_error <span class="sc">&amp;&amp;</span></span>
+<span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a>    gamma <span class="sc">&gt;</span> apparent_error</span>
+<span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a>  ) {</span>
+<span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a>    R <span class="ot">&lt;-</span> (</span>
+<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a>      bootstrap_adjusted <span class="sc">-</span> apparent_error</span>
+<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">/</span> (</span>
+<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a>      gamma <span class="sc">-</span> apparent_error</span>
+<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculates the relative overfitting rate using the</span></span>
+<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a>    <span class="co"># adjusted bootstrap error.</span></span>
+<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a>    R <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a>    <span class="co"># If the bootstrap error does not exceed the apparent error,</span></span>
+<span id="cb2-228"><a href="#cb2-228" aria-hidden="true" tabindex="-1"></a>    <span class="co"># there is no evidence of relative overfitting.</span></span>
+<span id="cb2-229"><a href="#cb2-229" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-230"><a href="#cb2-230" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-231"><a href="#cb2-231" aria-hidden="true" tabindex="-1"></a>  w <span class="ot">&lt;-</span></span>
+<span id="cb2-232"><a href="#cb2-232" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.632</span> <span class="sc">/</span></span>
+<span id="cb2-233"><a href="#cb2-233" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span> <span class="sc">-</span> <span class="fl">0.368</span> <span class="sc">*</span> R)</span>
+<span id="cb2-234"><a href="#cb2-234" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Converts the relative overfitting rate into the adaptive weight.</span></span>
+<span id="cb2-235"><a href="#cb2-235" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-236"><a href="#cb2-236" aria-hidden="true" tabindex="-1"></a>  error_632plus <span class="ot">&lt;-</span></span>
+<span id="cb2-237"><a href="#cb2-237" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span> <span class="sc">-</span> w) <span class="sc">*</span> apparent_error <span class="sc">+</span></span>
+<span id="cb2-238"><a href="#cb2-238" aria-hidden="true" tabindex="-1"></a>    w <span class="sc">*</span> bootstrap_adjusted</span>
+<span id="cb2-239"><a href="#cb2-239" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates .632+ using the adjusted bootstrap error.</span></span>
+<span id="cb2-240"><a href="#cb2-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-241"><a href="#cb2-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-242"><a href="#cb2-242" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-243"><a href="#cb2-243" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 7. Return the results from this simulated dataset</span></span>
+<span id="cb2-244"><a href="#cb2-244" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --------------------------------------------------</span></span>
+<span id="cb2-245"><a href="#cb2-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-246"><a href="#cb2-246" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(</span>
+<span id="cb2-247"><a href="#cb2-247" aria-hidden="true" tabindex="-1"></a>    <span class="at">Apparent =</span> apparent_error,</span>
+<span id="cb2-248"><a href="#cb2-248" aria-hidden="true" tabindex="-1"></a>    <span class="at">LOOCV =</span> loocv_error,</span>
+<span id="cb2-249"><a href="#cb2-249" aria-hidden="true" tabindex="-1"></a>    <span class="at">Bootstrap =</span> bootstrap_error,</span>
+<span id="cb2-250"><a href="#cb2-250" aria-hidden="true" tabindex="-1"></a>    <span class="at">Err632 =</span> error_632,</span>
+<span id="cb2-251"><a href="#cb2-251" aria-hidden="true" tabindex="-1"></a>    <span class="at">Gamma =</span> gamma,</span>
+<span id="cb2-252"><a href="#cb2-252" aria-hidden="true" tabindex="-1"></a>    <span class="at">R =</span> R,</span>
+<span id="cb2-253"><a href="#cb2-253" aria-hidden="true" tabindex="-1"></a>    <span class="at">Weight =</span> w,</span>
+<span id="cb2-254"><a href="#cb2-254" aria-hidden="true" tabindex="-1"></a>    <span class="at">Err632plus =</span> error_632plus</span>
+<span id="cb2-255"><a href="#cb2-255" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-256"><a href="#cb2-256" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Returns all quantities needed for the later comparison.</span></span>
+<span id="cb2-257"><a href="#cb2-257" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+</section>
+<section id="phase-2-examine-one-simulated-dataset" class="level4" data-number="2.1.10.2">
+<h4 data-number="2.1.10.2" class="anchored" data-anchor-id="phase-2-examine-one-simulated-dataset"><span class="header-section-number">2.1.10.2</span> Phase 2: Examine one simulated dataset</h4>
+<p>Before repeating the experiment 500 times, I first run the complete procedure on a single simulated dataset. This allows the individual quantities used by the .632 and .632+ estimators to be inspected before examining their behavior across repeated samples.</p>
+<p>A fixed random seed is used so that this example can be reproduced exactly.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensures that the complete repeated simulation can be reproduced.</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>one_simulation <span class="ot">&lt;-</span> <span class="fu">run_one_simulation</span>()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>one_simulation_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">Quantity =</span> <span class="fu">c</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Apparent training error"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"LOOCV error"</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Leave-one-out bootstrap error"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632 error"</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No-information error (gamma)"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Relative overfitting rate (R)"</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632+ weight (w)"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632+ error"</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">round</span>(</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    one_simulation[</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">c</span>(</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Apparent"</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"LOOCV"</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Bootstrap"</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Err632"</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Gamma"</span>,</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">"R"</span>,</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Weight"</span>,</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Err632plus"</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="dv">3</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  one_simulation_table,</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Prediction-error estimates from one simulated no-information dataset"</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Prediction-error estimates from one simulated no-information dataset</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Quantity</th>
+<th style="text-align: right;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Apparent training error</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LOOCV error</td>
+<td style="text-align: right;">0.500</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Leave-one-out bootstrap error</td>
+<td style="text-align: right;">0.534</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">.632 error</td>
+<td style="text-align: right;">0.338</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">No-information error (gamma)</td>
+<td style="text-align: right;">0.495</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Relative overfitting rate (R)</td>
+<td style="text-align: right;">1.000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">.632+ weight (w)</td>
+<td style="text-align: right;">1.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">.632+ error</td>
+<td style="text-align: right;">0.495</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>In this simulated dataset, the apparent training error was</p>
+<p><span class="math display">\[
+\mathrm{err}=0,
+\]</span></p>
+<p>showing the extreme overfitting behavior of 1-NN when evaluated on its own training observations.</p>
+<p>Leave-one-out cross-validation produced an error estimate of</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{CV}}=0.500,
+\]</span></p>
+<p>which exactly matched the known true prediction error. The leave-one-out bootstrap estimate was slightly higher:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}^{(1)}=0.534.
+\]</span></p>
+<p>The original .632 estimator produced a substantially lower estimate:</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632}=0.338.
+\]</span></p>
+<p>This occurred because the estimator retained 36.8% weight on the apparent training error of zero, pulling the estimate downward.</p>
+<p>The estimated no-information error was</p>
+<p><span class="math display">\[
+\widehat{\gamma}=0.495,
+\]</span></p>
+<p>which was very close to the population no-information error of 0.50. The relative overfitting rate reached</p>
+<p><span class="math display">\[
+R=1,
+\]</span></p>
+<p>causing the adaptive .632+ weight to become</p>
+<p><span class="math display">\[
+w=1.
+\]</span></p>
+<p>Because the leave-one-out bootstrap error of 0.534 exceeded the estimated no-information error of 0.495, the adjusted bootstrap error used by .632+ was</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{adj}}^{(1)}=0.495.
+\]</span></p>
+<p>With <span class="math inline">\(R=1\)</span> and <span class="math inline">\(w=1\)</span>, the .632+ estimator therefore placed all of its weight on this adjusted bootstrap error, producing</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{.632+}=0.495.
+\]</span></p>
+<p>This single example clearly illustrates the problem that motivated .632+: the original .632 estimator can be strongly optimistic when the apparent training error is extremely small.</p>
+<p>However, one simulated dataset cannot determine which estimator performs best overall. The next phase therefore repeats the complete experiment across 500 independently generated datasets to compare the estimators in terms of <strong>Exp, bias, SD, and RMS</strong>.</p>
+</section>
+<section id="phase-3-repeat-the-experiment-across-500-datasets" class="level4" data-number="2.1.10.3">
+<h4 data-number="2.1.10.3" class="anchored" data-anchor-id="phase-3-repeat-the-experiment-across-500-datasets"><span class="header-section-number">2.1.10.3</span> Phase 3: Repeat the experiment across 500 datasets</h4>
+<p>The results from one simulated dataset may depend heavily on random sampling. To evaluate the systematic behavior of the prediction-error estimators, the complete simulation is therefore repeated</p>
+<p><span class="math display">\[
+S=500
+\]</span></p>
+<p>times.</p>
+<p>For each repetition, a completely new no-information dataset of <span class="math inline">\(n=20\)</span> observations is generated and the entire procedure defined in <code>run_one_simulation()</code> is repeated.</p>
+<p>Thus, for simulation</p>
+<p><span class="math display">\[
+s=1,\ldots,500,
+\]</span></p>
+<p>the procedure produces separate estimates of</p>
+<p><span class="math display">\[
+\widehat{\mathrm{Err}}_{\mathrm{CV},s},
+\qquad
+\widehat{\mathrm{Err}}^{(1)}_s,
+\qquad
+\widehat{\mathrm{Err}}_{.632,s},
+\qquad
+\widehat{\mathrm{Err}}_{.632+,s}.
+\]</span></p>
+<p>Repeating the experiment creates a distribution of 500 estimates for each method. These distributions can then be used to determine whether an estimator is systematically biased and how much it varies across independently generated training samples.</p>
+<p>A fixed random seed is again used so that the complete repeated simulation is reproducible.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensures that the complete repeated simulation can be reproduced.</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>sim_results <span class="ot">&lt;-</span> <span class="fu">replicate</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">500</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">run_one_simulation</span>()</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Runs the entire procedure defined in run_one_simulation()</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># on 500 independently generated datasets.</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Each repetition generates a new dataset and returns:</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># apparent error, LOOCV error, bootstrap error, .632 error,</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># gamma, R, the .632+ weight, and the .632+ error.</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>sim_results <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>(sim_results)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># replicate() initially stores each simulation as a column.</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co"># t() transposes the results so that:</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co"># each row = one simulated dataset</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co"># each column = one calculated quantity</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co"># as.data.frame() converts the result into a data frame</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co"># for easier analysis in the next phase.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>The resulting dataset therefore contains <strong>500 independent simulation results</strong>, with one row representing each simulated training dataset.</p>
+<p>The next phase uses these repeated results to compare the estimators in terms of <strong>Exp, bias, SD, and RMS</strong> relative to the known true prediction error of</p>
+<p><span class="math display">\[
+\mathrm{Err}=0.50.
+\]</span></p>
+</section>
+<section id="phase-4-compare-estimator-performance-across-simulations" class="level4" data-number="2.1.10.4">
+<h4 data-number="2.1.10.4" class="anchored" data-anchor-id="phase-4-compare-estimator-performance-across-simulations"><span class="header-section-number">2.1.10.4</span> Phase 4: Compare estimator performance across simulations</h4>
+<p>The 500 repeated simulations are now summarized to compare the performance of the four prediction-error estimators against the known true error of 0.50.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>true_error <span class="ot">&lt;-</span> <span class="fl">0.50</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Known population prediction error in the no-information problem.</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>methods <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LOOCV"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Bootstrap"</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Err632"</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Err632plus"</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Selects the four prediction-error estimators to compare.</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>summary_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"LOOCV"</span>,</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Bootstrap"</span>,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632"</span>,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632+"</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">Exp =</span> <span class="fu">sapply</span>(</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    sim_results[methods],</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    mean</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates the average estimate across the 500 simulations.</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">Bias =</span> <span class="fu">sapply</span>(</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    sim_results[methods],</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(x) <span class="fu">mean</span>(x) <span class="sc">-</span> true_error</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates systematic over- or underestimation</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  <span class="co"># relative to the true error of 0.50.</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">SD =</span> <span class="fu">sapply</span>(</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    sim_results[methods],</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    sd</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates variability across the 500 simulated datasets.</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="at">RMS =</span> <span class="fu">sapply</span>(</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    sim_results[methods],</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(x) {</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sqrt</span>(</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mean</span>(</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>          (x <span class="sc">-</span> true_error)<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculates overall estimation error relative to the truth.</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>summary_table[, <span class="dv">2</span><span class="sc">:</span><span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="fu">round</span>(</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>  summary_table[, <span class="dv">2</span><span class="sc">:</span><span class="dv">5</span>],</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="co"># Rounds the numerical results to three decimal places.</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>  summary_table,</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Performance of prediction-error estimators across 500 simulated datasets"</span></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Performance of prediction-error estimators across 500 simulated datasets</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">Exp</th>
+<th style="text-align: right;">Bias</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: right;">RMS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LOOCV</td>
+<td style="text-align: right;">0.494</td>
+<td style="text-align: right;">-0.006</td>
+<td style="text-align: right;">0.145</td>
+<td style="text-align: right;">0.145</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bootstrap</td>
+<td style="text-align: right;">0.496</td>
+<td style="text-align: right;">-0.004</td>
+<td style="text-align: right;">0.109</td>
+<td style="text-align: right;">0.109</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">.632</td>
+<td style="text-align: right;">0.313</td>
+<td style="text-align: right;">-0.187</td>
+<td style="text-align: right;">0.069</td>
+<td style="text-align: right;">0.199</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">.632+</td>
+<td style="text-align: right;">0.432</td>
+<td style="text-align: right;">-0.068</td>
+<td style="text-align: right;">0.080</td>
+<td style="text-align: right;">0.105</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The table summarizes the average prediction-error estimate (Exp), bias, standard deviation (SD), and root mean squared error (RMS) for each estimator across the 500 simulated datasets.</p>
+<p>The results show a clear bias–variance trade-off. LOOCV and the leave-one-out bootstrap estimator were both nearly unbiased, with average estimated errors of 0.494 and 0.496, respectively. However, the bootstrap estimator was less variable than LOOCV, with an SD of 0.109 compared with 0.145.</p>
+<p>The original .632 estimator had the lowest variability (SD = 0.069), but this came at the cost of substantial optimistic bias: its average estimated error was only 0.313, corresponding to a bias of −0.187.</p>
+<p>The .632+ estimator corrected much of this downward bias while retaining relatively low variability. Its average estimated error was 0.432 with an SD of 0.080. Importantly, .632+ produced the smallest overall RMS error (0.105), compared with 0.109 for the leave-one-out bootstrap estimator, 0.145 for LOOCV, and 0.199 for the original .632 estimator.</p>
+<p>Thus, .632+ did not minimize bias or variability individually. Instead, it provided the best overall <strong>bias–variance compromise</strong>, consistent with the central argument of Efron and Tibshirani.</p>
+</section>
+<section id="phase-5-visualize-the-distributions-of-prediction-error-estimates" class="level4" data-number="2.1.10.5">
+<h4 data-number="2.1.10.5" class="anchored" data-anchor-id="phase-5-visualize-the-distributions-of-prediction-error-estimates"><span class="header-section-number">2.1.10.5</span> Phase 5: Visualize the distributions of prediction-error estimates</h4>
+<p>The repeated simulations can also be used to examine the complete distribution of each prediction-error estimator. The position of each distribution relative to the true error reflects bias, while its spread reflects variability.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">stack</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  sim_results[</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">"LOOCV"</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Bootstrap"</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Err632"</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Err632plus"</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(plot_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Estimate"</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Method"</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>plot_data<span class="sc">$</span>Method <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  plot_data<span class="sc">$</span>Method,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"LOOCV"</span>,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Bootstrap"</span>,</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Err632"</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Err632plus"</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">labels =</span> <span class="fu">c</span>(</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"LOOCV"</span>,</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Bootstrap"</span>,</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632"</span>,</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">".632+"</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>  plot_data,</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> Estimate,</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> Method</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="dv">25</span>,</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.7</span>,</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">show.legend =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">xintercept =</span> <span class="fl">0.50</span>,</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">"dashed"</span></span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> Method,</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">ncol =</span> <span class="dv">2</span></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Estimated prediction error"</span>,</span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Number of simulations"</span>,</span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Distribution of prediction-error estimates across 500 simulations"</span>,</span>
+<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Dashed vertical line indicates the known true prediction error (0.50)"</span></span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="02-632-plus-bootstrap_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The figure makes the bias–variance trade-off across the four estimators immediately visible. LOOCV is centered close to the true prediction error of 0.50, but its distribution is the widest, indicating relatively high variability across simulated datasets. The leave-one-out bootstrap estimator is also centered close to the true error, but its distribution is noticeably narrower than that of LOOCV.</p>
+<p>In contrast, the original .632 estimator has the narrowest distribution but is shifted substantially to the left of the true error, illustrating its strong optimistic bias. The .632+ estimator moves the distribution much closer to the true error while still retaining a relatively narrow spread.</p>
+<p>Taken together, the figure shows why .632+ achieves a stronger overall bias–variance compromise: it sacrifices some of the low variability of the original .632 estimator in exchange for a substantial reduction in optimistic bias.</p>
+</section>
+<section id="phase-6-compare-the-simulation-with-experiment-8" class="level4" data-number="2.1.10.6">
+<h4 data-number="2.1.10.6" class="anchored" data-anchor-id="phase-6-compare-the-simulation-with-experiment-8"><span class="header-section-number">2.1.10.6</span> Phase 6: Compare the simulation with Experiment 8</h4>
+<p>Because this simulation was designed as a simplified reproduction of Experiment 8, the final results can be compared with those reported by Efron and Tibshirani.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>comparison_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimator =</span> <span class="fu">rep</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"LOOCV"</span>, <span class="st">"Bootstrap"</span>, <span class="st">".632"</span>, <span class="st">".632+"</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">6</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Source =</span> <span class="fu">rep</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"Our simulation"</span>, <span class="st">"Paper"</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">each =</span> <span class="dv">4</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">times =</span> <span class="dv">3</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">Metric =</span> <span class="fu">rep</span>(</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"Exp"</span>, <span class="st">"SD"</span>, <span class="st">"RMS"</span>),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">each =</span> <span class="dv">8</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">c</span>(</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.494</span>, <span class="fl">0.496</span>, <span class="fl">0.313</span>, <span class="fl">0.432</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.513</span>, <span class="fl">0.507</span>, <span class="fl">0.320</span>, <span class="fl">0.439</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.145</span>, <span class="fl">0.109</span>, <span class="fl">0.069</span>, <span class="fl">0.080</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.136</span>, <span class="fl">0.097</span>, <span class="fl">0.062</span>, <span class="fl">0.068</span>,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.145</span>, <span class="fl">0.109</span>, <span class="fl">0.199</span>, <span class="fl">0.105</span>,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.136</span>, <span class="fl">0.097</span>, <span class="fl">0.190</span>, <span class="fl">0.092</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>comparison_data<span class="sc">$</span>Estimator <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  comparison_data<span class="sc">$</span>Estimator,</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"LOOCV"</span>, <span class="st">"Bootstrap"</span>, <span class="st">".632"</span>, <span class="st">".632+"</span>)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>comparison_data<span class="sc">$</span>Metric <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>  comparison_data<span class="sc">$</span>Metric,</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Exp"</span>, <span class="st">"SD"</span>, <span class="st">"RMS"</span>)</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>  comparison_data,</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> Estimator,</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> Value,</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> Source</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(</span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="st">"dodge"</span>,</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">width =</span> <span class="fl">0.7</span></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> Metric,</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">scales =</span> <span class="st">"free_y"</span>,</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">nrow =</span> <span class="dv">1</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Prediction-error estimator"</span>,</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Value"</span>,</span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Our simulation closely reproduces Experiment 8"</span>,</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison of expectation, standard deviation, and RMS error"</span>,</span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Source"</span></span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.major.x =</span> <span class="fu">element_blank</span>()</span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="02-632-plus-bootstrap_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The figure shows that the present simulation reproduces the main pattern reported in Experiment 8. Across the four estimators, the expectation, standard deviation, and RMS error from our simulation are close to the corresponding values reported by Efron and Tibshirani.</p>
+<p>In both analyses, LOOCV is approximately unbiased but relatively variable, while the leave-one-out bootstrap estimator reduces variability. The original .632 estimator has the lowest variability but substantially underestimates the true prediction error. In contrast, the .632+ estimator corrects much of this optimistic bias while maintaining relatively low variability.</p>
+<p>Most importantly, .632+ has the lowest RMS error in both the original experiment and the present simulation. This supports the same overall conclusion as Efron and Tibshirani: the advantage of .632+ comes from achieving a better balance between bias and variability rather than minimizing either one individually.</p>
+</section>
+</section>
+<section id="conclusions" class="level3" data-number="2.1.11">
+<h3 data-number="2.1.11" class="anchored" data-anchor-id="conclusions"><span class="header-section-number">2.1.11</span> Conclusions</h3>
+<p>The computational exploration reproduced the central pattern of Efron and Tibshirani’s no-information 1-NN experiment.</p>
+<p>The simulation showed that low bias alone does not necessarily produce the best prediction-error estimator. LOOCV was nearly unbiased but highly variable, while the original .632 estimator was stable but strongly biased downward.</p>
+<p>The .632+ estimator provided a better compromise between these two sources of error. Although it was neither the least biased nor the least variable estimator individually, it achieved the lowest overall RMS error in the simulation.</p>
+<p>The results therefore illustrate the main motivation for .632+: adapting the bootstrap weight according to the degree of overfitting can improve overall prediction-error estimation when the apparent training error is severely optimistic.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./01-cross-validation-selection-bias.html" class="pagination-link" aria-label="Cross-Validation Selection Bias">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Cross-Validation Selection Bias</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./03-pdp-visualizing-the-model.html" class="pagination-link" aria-label="Partial Dependence Plots">
+        <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Partial Dependence Plots</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
