@@ -36,19 +36,3 @@ Where relevant, I incorporate examples from **exercise physiology, biomedical re
 **Statistical learning:** Linear and nonlinear regression · polynomial basis expansions · Random Forest · Ridge · LASSO · Elastic Net · k-nearest neighbors
 
 **Evaluation & interpretation:** Cross-validation and nested cross-validation · bootstrap-based error estimation · out-of-bag validation · independent train/test evaluation · permutation importance · partial dependence · coefficient paths · multicollinearity and high-dimensional feature selection
-
-## Source code and reproducibility
-
-Each analysis has a `.qmd` source file at the repository root, with R code embedded alongside its explanations. The compiled book is stored under [`_book/`](./_book/).
-
-| Example | Source code |
-|---|---|
-| Wearable / Random Forest | [`04-random-forests.qmd`](./04-random-forests.qmd) |
-| Muscle-strength polynomial regression | [`05-polynomial-regression.qmd`](./05-polynomial-regression.qmd) |
-| EIM / regularization | [`07-regularization-elastic-net.qmd`](./07-regularization-elastic-net.qmd) |
-
-To render the book locally (with [Quarto](https://quarto.org/) and the R packages used in the chapters installed):
-
-```bash
-quarto render
-```
