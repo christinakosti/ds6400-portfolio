@@ -1,0 +1,1325 @@
+---
+title: "Regularization - Elastic Net"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## Paper Overview
+
+**Title:** Regularization and Variable Selection via the Elastic Net
+
+**Authors:** Hui Zou and Trevor Hastie (2005)
+
+**Journal:** Journal of the Royal Statistical Society: Series B (Statistical Methodology), 67(2), 301–320.
+
+**Research Problem:** How can we build accurate and interpretable regression models when we have many highly correlated predictors? Ridge handles correlated predictors but does not perform variable selection, while LASSO selects variables but may discard important correlated predictors.
+
+## Motivation: Why Elastic Net?
+
+Zou and Hastie (2005) introduced Elastic Net to address some limitations of existing regularization methods, particularly when dealing with many highly correlated predictors.
+
+At the time, two popular approaches were Ridge regression and LASSO. Ridge could handle correlated predictors by shrinking their coefficients, but it generally kept all predictors in the model. LASSO could also remove predictors by setting their coefficients to zero, making models easier to interpret.
+
+However, LASSO had three important limitations:
+
+- **High-dimensional data (*p > n*):** The standard LASSO solution could select at most *n* predictors, even when more variables might contain useful information.
+- **Correlated predictors:** When several predictors were strongly correlated, LASSO tended to select one and discard the others.
+- **Prediction performance:** In some settings with highly correlated predictors, Ridge could predict better than LASSO.
+
+The authors proposed **Elastic Net**, which combines L1 (LASSO) and L2 (Ridge) regularization to perform variable selection while encouraging correlated predictors to be retained together.
+
+## Regularization Methods
+
+All three methods aim to find regression coefficients that minimize prediction error, but they differ in how they penalize the coefficients. Regularization introduces some bias to reduce variance, potentially improving predictions on new data.
+
+We begin with the residual sum of squares (RSS):
+
+$$
+RSS(\beta)=\sum_{i=1}^{n}(y_i-\hat{y}_i)^2
+$$
+
+where:
+
+- $y_i$: Observed outcome for observation $i$.
+- $\hat{y}_i$: Predicted outcome.
+- $n$: Number of observations.
+- $\beta$: Vector of regression coefficients.
+
+### Ridge Regression (L2)
+
+$$
+\hat{\beta}_{\text{Ridge}}
+=\underset{\beta}{\arg\min}
+\left\{
+RSS(\beta)+\lambda_2\sum_{j=1}^{p}\beta_j^2
+\right\}
+$$
+
+where:
+
+- $\hat{\beta}_{\text{Ridge}}$: Estimated coefficients that minimize the objective.
+- $\lambda_2$: Strength of the Ridge penalty.
+- $\beta_j$: Coefficient of predictor $j$.
+- $p$: Number of predictors.
+- $\sum\beta_j^2$: L2 penalty (sum of squared coefficients).
+
+Ridge shrinks coefficients toward zero, making their estimates more stable when predictors are highly correlated. However, it generally keeps all predictors in the model.
+
+### LASSO (L1)
+
+$$
+\hat{\beta}_{\text{LASSO}}
+=\underset{\beta}{\arg\min}
+\left\{
+RSS(\beta)+\lambda_1\sum_{j=1}^{p}|\beta_j|
+\right\}
+$$
+
+where:
+
+- $\hat{\beta}_{\text{LASSO}}$: Estimated coefficients that minimize the objective.
+- $\lambda_1$: Strength of the LASSO penalty.
+- $|\beta_j|$: Absolute value of coefficient $j$.
+- $\sum|\beta_j|$: L1 penalty (sum of absolute coefficients).
+
+LASSO shrinks coefficients and can set some exactly to zero, effectively selecting variables. However, when predictors are highly correlated, it may select only one and discard the others.
+
+### Naïve Elastic Net (L1 + L2)
+
+Zou and Hastie initially proposed combining the two penalties:
+
+$$
+\hat{\beta}_{\text{naive}}
+=\underset{\beta}{\arg\min}
+\left\{
+RSS(\beta)
++\lambda_1\sum_{j=1}^{p}|\beta_j|
++\lambda_2\sum_{j=1}^{p}\beta_j^2
+\right\}
+$$
+
+where:
+
+- $\hat{\beta}_{\text{naive}}$: Estimated coefficients from the initial Elastic Net formulation.
+- $\lambda_1$: Controls L1 regularization (variable selection).
+- $\lambda_2$: Controls L2 regularization (coefficient stabilization).
+- The two penalties are combined in the same optimization problem.
+
+Elastic Net combines LASSO's variable selection with Ridge's ability to handle correlated predictors. This encourages strongly correlated variables to have similar coefficients, known as the *grouping effect*.
+
+However, the authors found that this initial formulation could shrink coefficients excessively. They therefore introduced a corrected Elastic Net estimator.
+
+## The Grouping Effect
+
+One of the main advantages of Elastic Net is the **grouping effect**, where strongly correlated predictors tend to receive similar coefficients and may be selected together.
+
+LASSO, on the other hand, may select only one predictor from a correlated group, even when several contain similar information.
+
+### Mathematical Intuition
+
+Suppose two predictors are identical ($X_1 = X_2$), and their coefficients must add up to 2 to produce the same predictions.
+
+Consider two possible solutions:
+
+| Coefficients | L1 Penalty (LASSO) | L2 Penalty (Ridge) |
+|---|---|---|
+| $\beta_1=2,\ \beta_2=0$ | $|2|+|0|=2$ | $2^2+0^2=4$ |
+| $\beta_1=1,\ \beta_2=1$ | $|1|+|1|=2$ | $1^2+1^2=2$ |
+
+Both solutions give identical predictions because the predictors are identical.
+
+**LASSO** gives the same penalty to both solutions, so it does not necessarily prefer sharing the coefficients.
+
+**Elastic Net**, through its L2 component, prefers the second solution because the squared coefficients have a smaller sum. This encourages the correlated predictors to receive similar coefficients.
+
+### Why Does This Matter?
+
+Imagine predicting disease risk using gene-expression data. Genes involved in the same biological pathway may be highly correlated because they participate in related biological processes.
+
+LASSO might select only one gene from a correlated group, while Elastic Net may retain several through its grouping effect. This can help preserve information about related genes rather than focusing on a single predictor. However, selecting these genes does not necessarily mean they are biologically important or causally related to the disease.
+
+## From Naïve to Corrected Elastic Net
+
+The authors found that their initial method, called **naïve Elastic Net**, could shrink coefficients too much because it applied both Ridge (L2) and LASSO (L1) penalties. This *double shrinkage* introduced unnecessary bias and could reduce prediction accuracy.
+
+To address this, they proposed a correction that rescales the estimated coefficients:
+
+$$
+\hat{\beta}_{EN}=(1+\lambda_2)\hat{\beta}_{naive}
+$$
+
+where:
+
+- $\hat{\beta}_{EN}$: Corrected Elastic Net coefficients.
+- $\hat{\beta}_{naive}$: Coefficients estimated by naïve Elastic Net.
+- $\lambda_2$: Strength of the Ridge penalty.
+
+For example, if $\lambda_2=1$ and the naïve coefficient is 0.2, the corrected coefficient becomes $(1+1)\times0.2=0.4$.
+
+This correction reduces the excessive shrinkage while preserving variable selection: coefficients that were zero remain zero.
+
+The corrected Elastic Net therefore keeps the benefits of combining Ridge and LASSO without the extra shrinkage introduced by the naïve formulation.
+
+## Computational Approach: LARS-EN
+
+After introducing Elastic Net, the authors needed an efficient way to estimate its coefficients across different penalty strengths.
+
+They proposed **LARS-EN (Least Angle Regression–Elastic Net)**, an extension of the LARS algorithm originally developed for LASSO.
+
+### How Does It Work?
+
+The key idea is to transform the naïve Elastic Net problem into an equivalent LASSO problem using an augmented dataset:
+
+$$
+X^*=\frac{1}{\sqrt{1+\lambda_2}}
+\begin{pmatrix}
+X\\
+\sqrt{\lambda_2}I_p
+\end{pmatrix},
+\qquad
+y^*=
+\begin{pmatrix}
+y\\
+0_p
+\end{pmatrix}
+$$
+
+where:
+
+- $X$: Original predictor matrix.
+- $y$: Original outcome vector.
+- $\lambda_2$: Ridge penalty strength.
+- $I_p$: Identity matrix with $p$ rows and columns.
+- $0_p$: Vector of $p$ zeros.
+- $X^*,y^*$: Artificially augmented data.
+
+By adding these artificial observations, the Elastic Net problem can be solved using a modified LASSO algorithm.
+
+**Why is this useful?**
+
+- It allows efficient calculation of coefficient paths across penalty values.
+- It enables Elastic Net to select more than $n$ predictors when $p>n$.
+- It supports early stopping to reduce computational effort.
+
+The authors also used **10-fold cross-validation** to select the tuning parameters based on prediction error.
+
+### Connection to Modern R Implementation
+
+Today, Elastic Net can be fitted using `glmnet` in R, which uses coordinate descent rather than the original LARS-EN algorithm. Both approaches fit models with combined L1 and L2 penalties, but use different computational techniques.
+
+## Results and Findings
+
+Zou and Hastie evaluated Elastic Net using real datasets and simulation experiments to determine whether it improved prediction accuracy and variable selection compared with existing methods.
+
+### Prostate Cancer Data
+
+The authors used eight clinical predictors to estimate prostate-specific antigen (PSA) levels, with 67 observations for training and 30 for testing.
+
+| Method | Test MSE |
+|---|---:|
+| OLS | 0.586 |
+| Ridge | 0.566 |
+| LASSO | 0.499 |
+| Naïve Elastic Net | 0.566 |
+| **Elastic Net** | **0.381** |
+
+**Finding.** Elastic Net achieved the lowest test prediction error, approximately 24% lower than LASSO. It also retained only five of the eight predictors, showing that it could improve prediction while maintaining a relatively simple model.
+
+### Simulation Study
+
+The authors tested four simulated scenarios with different patterns of correlated and informative predictors. The fourth scenario specifically included groups of highly correlated variables.
+
+Elastic Net outperformed LASSO in all four simulations, reducing median test MSE by approximately 13–27%.
+
+**Finding.** Elastic Net generally provided better prediction and selected correlated predictors more effectively than LASSO. However, Ridge achieved the lowest prediction error in two simulations, showing that Elastic Net was not always the best-performing method.
+
+### Leukemia Gene-Expression Data
+
+The authors also tested Elastic Net on a dataset containing 7,129 genes and 72 samples, using 38 samples for training and 34 for testing.
+
+Elastic Net selected **45 genes** and correctly classified all 34 test samples.
+
+**Finding.** This demonstrated that Elastic Net could select more predictors than the number of training observations ($p > n$), overcoming an important limitation of the standard LASSO solution path.
+
+## Strengths and Limitations
+
+**Strengths**
+
+- Combines variable selection with more stable estimation of correlated predictors.
+- Introduces the grouping effect, which is particularly useful for high-dimensional biological data.
+- Demonstrates the method using simulations and real datasets, with improvements in prediction accuracy over LASSO.
+
+**Limitations**
+
+- Elastic Net does not always outperform Ridge or LASSO. Performance depends on the data.
+- The method requires tuning two penalty parameters, typically through cross-validation.
+- Selecting correlated predictors does not necessarily mean they are biologically important or causally related to the outcome.
+
+## Conclusion
+
+Zou and Hastie (2005) showed that combining L1 and L2 regularization can address important limitations of LASSO, particularly when predictors are highly correlated. Beyond prediction accuracy, Elastic Net provides a way to select groups of related predictors, making it especially useful for high-dimensional datasets.
+
+## Computational Exploration: A Physiological Example
+
+### Background
+
+**Electrical Impedance Myography (EIM)** is a non-invasive technique that assesses the electrical properties of muscle tissue by applying low-intensity electrical currents at different frequencies.
+
+EIM provides three commonly used measurements:
+
+- **Resistance (R):** The opposition of tissue to electrical current.
+- **Reactance (Xc):** The capacitive component of impedance, influenced partly by cell membranes.
+- **Phase angle (PhA):** The angle between resistance and reactance, calculated as $\arctan(Xc/R)$ and expressed in degrees.
+
+Because these measurements are obtained across multiple frequencies, many of the resulting features are highly correlated. For example, resistance measured at 50 kHz may contain information similar to resistance measured at 51 kHz. Furthermore, phase angle is mathematically related to both resistance and reactance.
+
+This makes EIM an interesting example of the **multicollinearity and variable-selection problems** discussed by Zou and Hastie (2005).
+
+For our exploration, we simulate EIM-like measurements across 81 frequencies (20–10,000 kHz) to predict **handgrip strength (HGS)**. We use 60 training participants and 200 independent test participants.
+
+With three measurements per frequency, we obtain **243 predictors for only 60 training observations ($p>n$)**, creating a high-dimensional regression problem.
+
+Our goal is to compare how Ridge, LASSO and Elastic Net handle these correlated predictors and how accurately they predict HGS in unseen participants.
+
+### Data Simulation
+
+We simulate EIM measurements across 81 frequencies (20–10,000 kHz) using smooth, frequency-dependent curves. The dataset contains 60 training participants, 200 independent test participants, and 243 predictors (81 frequencies × 3 EIM parameters). All observations are simulated and do not represent real participant data.
+
+In the code below: We generate a synthetic dataset to show regularization in a high-dimensional setting. Five participant-level factors determine the shapes and amplitudes of the EIM spectra, creating strong correlations across frequencies. Handgrip strength is simulated using two of these factors and random noise. We then randomly assign 60 participants to training and reserve 200 independent participants for evaluating prediction accuracy. A fixed random seed ensures reproducibility.
+
+```{r}
+#| label: simulate-eim
+#| message: false
+#| warning: false
+#| code-fold: true
+
+set.seed(6400)
+
+# Sample sizes and frequencies
+n_train <- 60
+n_test <- 200
+n_total <- n_train + n_test
+
+freqs <- exp(seq(log(20), log(10000), length.out = 81))
+logf <- log10(freqs)
+nf <- length(freqs)
+
+# Five participant-level factors
+z <- matrix(rnorm(n_total * 5), ncol = 5)
+
+# Smooth frequency-dependent components
+low <- 1 / (1 + (freqs / 35)^2)
+mid <- 1 / (1 + (freqs / 85)^2)
+high <- 1 / (1 + (freqs / 4000)^1.5)
+
+xc_peak <- exp(
+  -0.5 * ((logf - log10(70)) / 0.38)^2
+)
+
+xc_rise <- plogis(
+  (logf - log10(6500)) / 0.13
+)
+
+# Resistance: smooth curves with different amplitudes
+R <- outer(15 * exp(0.12 * z[, 3]), rep(1, nf)) +
+  outer(5 * exp(0.50 * z[, 1]), low) +
+  outer(6 * exp(0.40 * z[, 2]), mid) +
+  outer(2.5 * exp(0.25 * z[, 4]), high)
+
+# Reactance: smooth low-frequency peak and high-frequency rise
+Xc <- outer(1.8 * exp(0.20 * z[, 5]), rep(1, nf)) +
+  outer(
+    2.8 * exp(
+      0.35 * z[, 2] + 0.08 * z[, 1] + 0.10 * z[, 5]
+    ),
+    xc_peak
+  ) +
+  outer(
+    4.6 * exp(0.32 * z[, 4] + 0.12 * z[, 5]),
+    xc_rise
+  )
+
+# Phase angle derived from resistance and reactance
+PhA <- atan2(Xc, R) * 180 / pi
+
+# Combine EIM features
+colnames(R) <- paste0("R_", sprintf("%.1f", freqs), "kHz")
+colnames(Xc) <- paste0("Xc_", sprintf("%.1f", freqs), "kHz")
+colnames(PhA) <- paste0("PhA_", sprintf("%.1f", freqs), "kHz")
+
+X <- cbind(R, Xc, PhA)
+
+# Simulated handgrip strength (kg)
+# Related to two latent factors that also influence EIM measurements
+# Random noise represents unexplained variation in HGS
+HGS <- 35 +
+  2.0 * z[, 1] +
+  4.5 * z[, 2] +
+  rnorm(n_total, sd = 3.5)
+
+# Separate training and independent test observations
+train_id <- sample(seq_len(n_total), n_train)
+
+x_train <- X[train_id, ]
+y_train <- HGS[train_id]
+
+x_test <- X[-train_id, ]
+y_test <- HGS[-train_id]
+
+# Dataset summary
+data.frame(
+  Dataset = c("Training", "Test"),
+  Participants = c(nrow(x_train), nrow(x_test)),
+  Predictors = c(ncol(x_train), ncol(x_test))
+) |>
+  gt::gt() |>
+  gt::tab_header(
+    title = gt::md("**Simulated EIM Dataset**"),
+    subtitle = "81 frequencies × 3 parameters = 243 predictors"
+  ) |>
+  gt::cols_label(
+    Participants = "Participants (n)",
+    Predictors = "Predictors (p)"
+  ) |>
+  gt::cols_align(
+    align = "center",
+    columns = c(Participants, Predictors)
+  ) |>
+  gt::tab_options(
+    table.font.size = gt::px(14),
+    data_row.padding = gt::px(8)
+  )
+```
+
+### Visualizing EIM Measurements
+
+Before fitting regression models, we examine how resistance, reactance, and phase angle vary across frequencies. We visualize the individual participant curves alongside the mean and the 10th–90th percentile range to explore both the overall spectral patterns and between-participant variation.
+
+```{r}
+#| label: fig-eim-curves
+#| fig-cap: "Simulated EIM spectra across frequencies. Thin lines represent individual training participants (n = 60), colored lines represent the mean, and shaded regions represent the 10th–90th percentile."
+#| fig-width: 12.5
+#| fig-height: 5
+#| warning: false
+#| code-fold: true
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Organize training data
+eim_curves <- data.frame(
+  Participant = rep(seq_len(n_train), times = nf),
+  Frequency = rep(freqs, each = n_train),
+  Resistance = as.vector(R[train_id, ]),
+  Reactance = as.vector(Xc[train_id, ]),
+  PhaseAngle = as.vector(PhA[train_id, ])
+) |>
+  pivot_longer(
+    cols = c(Resistance, Reactance, PhaseAngle),
+    names_to = "Parameter",
+    values_to = "Value"
+  ) |>
+  mutate(
+    Parameter = factor(
+      Parameter,
+      levels = c("Resistance", "Reactance", "PhaseAngle"),
+      labels = c(
+        "Resistance (Ω)",
+        "Reactance (Ω)",
+        "Phase angle (°)"
+      )
+    )
+  )
+
+# Mean and percentile curves
+eim_summary <- eim_curves |>
+  group_by(Parameter, Frequency) |>
+  summarise(
+    Mean = mean(Value),
+    Lower = quantile(Value, 0.10),
+    Upper = quantile(Value, 0.90),
+    .groups = "drop"
+  )
+
+# Colors consistent with MYOLEX
+eim_colors <- c(
+  "Resistance (Ω)" = "#0072B2",
+  "Reactance (Ω)" = "#D55E00",
+  "Phase angle (°)" = "#009E73"
+)
+
+ggplot() +
+  geom_ribbon(
+    data = eim_summary,
+    aes(
+      x = Frequency,
+      ymin = Lower,
+      ymax = Upper,
+      fill = Parameter
+    ),
+    alpha = 0.15
+  ) +
+  geom_line(
+    data = eim_curves,
+    aes(
+      x = Frequency,
+      y = Value,
+      group = Participant
+    ),
+    color = "grey45",
+    alpha = 0.18,
+    linewidth = 0.35
+  ) +
+  geom_line(
+    data = eim_summary,
+    aes(
+      x = Frequency,
+      y = Mean,
+      color = Parameter
+    ),
+    linewidth = 1.3
+  ) +
+  facet_wrap(
+    ~Parameter,
+    scales = "free_y",
+    nrow = 1
+  ) +
+  scale_x_log10(
+    breaks = c(20, 100, 1000, 10000),
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  scale_color_manual(values = eim_colors) +
+  scale_fill_manual(values = eim_colors) +
+  labs(
+    title = "Simulated EIM Spectra",
+    subtitle = "Frequency-dependent measurements across 60 training participants",
+    x = "Frequency (kHz)",
+    y = NULL,
+    caption = "Gray: individual participants | Colored: mean | Shaded: 10th–90th percentile"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    strip.text = element_text(face = "bold", size = 11),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.spacing = grid::unit(1.2, "lines"),
+    legend.position = "none",
+    plot.caption = element_text(color = "grey45", size = 9)
+  )
+```
+
+### Exploring Correlations Between EIM Features
+
+We next explore the relationships between predictors using a triangular correlation matrix. The heatmap displays Pearson correlation coefficients across the 60 training participants. Red indicates positive correlations, blue indicates negative correlations, and lighter colors indicate weaker relationships.
+
+```{r}
+#| label: fig-eim-correlations
+#| fig-cap: "Exploratory Pearson correlation matrix of 12 frequency-specific EIM features from the simulated training data (n = 60)."
+#| fig-width: 10
+#| fig-height: 9
+#| warning: false
+#| code-fold: true
+
+# Select nearby frequencies across EIM parameters
+r_targets <- c(22, 26, 31, 38)
+xc_targets <- c(48, 56, 63, 71)
+pha_targets <- c(22, 26, 56, 63)
+
+# Find closest available frequencies
+nearest_idx <- function(targets) {
+  sapply(
+    targets,
+    function(f) which.min(abs(freqs - f))
+  )
+}
+
+r_idx <- nearest_idx(r_targets)
+xc_idx <- nearest_idx(xc_targets)
+pha_idx <- nearest_idx(pha_targets)
+
+# Extract selected columns from each parameter
+selected_cols <- c(
+  r_idx,
+  nf + xc_idx,
+  2 * nf + pha_idx
+)
+
+feature_labels <- c(
+  paste0("R ", round(freqs[r_idx])),
+  paste0("Xc ", round(freqs[xc_idx])),
+  paste0("PhA ", round(freqs[pha_idx]))
+)
+
+# Correlations calculated from training data only
+cor_mat <- cor(x_train[, selected_cols, drop = FALSE])
+
+# Convert to plotting format
+cor_df <- as.data.frame(as.table(cor_mat)) |>
+  mutate(
+    Row = as.integer(Var1),
+    Col = as.integer(Var2),
+    r = Freq
+  ) |>
+  filter(Row >= Col)
+
+# Triangular correlation heatmap
+ggplot(cor_df, aes(x = Col, y = Row, fill = r)) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.8,
+    width = 0.97,
+    height = 0.97
+  ) +
+  geom_text(
+    aes(
+      label = sprintf("%.2f", r),
+      color = abs(r) >= 0.65
+    ),
+    size = 3.1
+  ) +
+  scale_color_manual(
+    values = c(
+      "TRUE" = "white",
+      "FALSE" = "#263445"
+    ),
+    guide = "none"
+  ) +
+  scale_fill_gradient2(
+    low = "#365F91",
+    mid = "#F7F7F5",
+    high = "#C65D50",
+    midpoint = 0,
+    limits = c(-1, 1),
+    breaks = c(-1, -0.5, 0, 0.5, 1),
+    name = "Pearson r"
+  ) +
+  scale_x_continuous(
+    breaks = seq_along(feature_labels),
+    labels = feature_labels,
+    limits = c(0.5, 12.5),
+    expand = c(0, 0)
+  ) +
+  scale_y_reverse(
+    breaks = seq_along(feature_labels),
+    labels = feature_labels,
+    limits = c(12.5, 0.5),
+    expand = c(0, 0)
+  ) +
+  coord_fixed() +
+  labs(
+    title = "Exploring Correlations Between EIM Features",
+    subtitle = "Nearby frequencies across resistance, reactance, and phase angle",
+    x = NULL,
+    y = NULL,
+    caption = "Frequencies in kHz | Lower triangle only | Simulated training data"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey45"),
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      vjust = 1,
+      size = 9
+    ),
+    axis.text.y = element_text(size = 9),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    plot.caption = element_text(color = "grey50", size = 9),
+    plot.margin = margin(20, 20, 15, 15)
+  )
+```
+
+These relationships are relevant for variable selection. When several predictors are strongly correlated, LASSO may retain only a subset, while Elastic Net encourages correlated predictors to receive similar coefficients.
+
+The correlation matrix displays a selected subset of 12 features for readability. All 243 predictors are retained for model fitting.
+
+### Fitting Ridge, LASSO and Elastic Net
+
+We now compare three regularization methods using the same training dataset. All models are fitted using the `glmnet` package, which combines L1 and L2 penalties through the parameter $\alpha$:
+
+- **Ridge ($\alpha=0$):** Uses only L2 regularization.
+- **LASSO ($\alpha=1$):** Uses only L1 regularization.
+- **Elastic Net ($\alpha=0.5$):** Combines L1 and L2 regularization equally.
+
+For each method, we use **10-fold cross-validation** to select the penalty strength $\lambda$ that minimizes mean squared prediction error (MSE). The same folds are used across models for a consistent comparison, and predictors are standardized before fitting.
+
+The independent test dataset is not used during model selection.
+
+In the code below: `foldid` assigns participants to the same cross-validation folds across methods. The arguments `nlambda = 200` and `lambda.min.ratio = 1e-4` define a broad search over penalty strengths, while `type.measure = "mse"` specifies the prediction error used for tuning. The `cv.glmnet()` function fits each model across these penalty values and calculates its cross-validation error.
+
+```{r}
+#| label: fit-regularization-models
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(glmnet)
+
+set.seed(6400)
+
+# Use identical 10-fold CV assignments for all models
+fold_id <- sample(rep(1:10, length.out = n_train))
+
+# alpha controls the balance between L1 and L2 penalties
+alphas <- c(
+  "Ridge" = 0,
+  "LASSO" = 1,
+  "Elastic Net" = 0.5
+)
+
+# Fit each model and select lambda by 10-fold CV
+cv_models <- lapply(alphas, function(a) {
+  cv.glmnet(
+    x = x_train,
+    y = y_train,
+    alpha = a,
+    foldid = fold_id,
+    nlambda = 200,
+    lambda.min.ratio = 1e-4,
+    standardize = TRUE,
+    type.measure = "mse"
+  )
+})
+```
+
+### Cross-Validation and Lambda Selection
+
+The amount of regularization is controlled by $\lambda$. Larger values impose stronger penalties, shrinking the regression coefficients more aggressively. However, excessive regularization can also increase prediction error.
+
+To select $\lambda$, we examine the 10-fold cross-validation error across different penalty strengths for each model.
+
+We compare two common choices:
+
+- **$\lambda_{\min}$:** The penalty with the lowest mean cross-validation error.
+- **$\lambda_{1se}$:** The largest penalty whose mean CV error is within one standard error of the minimum. This provides a more strongly regularized model with comparable estimated performance.
+
+The code extracts the mean cross-validation error (`cvm`) and its estimated standard error (`cvsd`) across the tested penalty values (`lambda`). It also identifies the penalties selected by the minimum-error and one-standard-error rules (`lambda.min` and `lambda.1se`). These results are plotted separately for each method, with the shaded region showing ±1 standard error around the mean cross-validation error.
+
+```{r}
+#| label: fig-regularization-cv
+#| fig-cap: "Ten-fold cross-validation error across penalty strengths for Ridge, LASSO and Elastic Net."
+#| fig-width: 12
+#| fig-height: 5.2
+#| warning: false
+#| code-fold: true
+
+library(ggplot2)
+library(dplyr)
+
+# Extract cross-validation results
+cv_data <- bind_rows(lapply(names(cv_models), function(method) {
+  
+  model <- cv_models[[method]]
+  
+  data.frame(
+    Method = method,
+    Lambda = model$lambda,
+    CV_MSE = model$cvm,
+    SE = model$cvsd
+  )
+}))
+
+# Extract lambda choices and their corresponding CV errors
+lambda_data <- bind_rows(lapply(names(cv_models), function(method) {
+  
+  model <- cv_models[[method]]
+  
+  idx_min <- which.min(abs(model$lambda - model$lambda.min))
+  idx_1se <- which.min(abs(model$lambda - model$lambda.1se))
+  
+  data.frame(
+    Method = method,
+    Type = c("lambda_min", "lambda_1se"),
+    Lambda = c(model$lambda.min, model$lambda.1se),
+    CV_MSE = c(model$cvm[idx_min], model$cvm[idx_1se]),
+    Label = c("λmin", "λ1se")
+  )
+}))
+
+# Keep panel order
+cv_data$Method <- factor(
+  cv_data$Method,
+  levels = c("Ridge", "LASSO", "Elastic Net")
+)
+
+lambda_data$Method <- factor(
+  lambda_data$Method,
+  levels = c("Ridge", "LASSO", "Elastic Net")
+)
+
+# Nice x-axis labels without scientific notation
+nice_log_labels <- scales::label_number(
+  accuracy = 0.01,
+  big.mark = ",",
+  trim = TRUE
+)
+
+ggplot(cv_data, aes(x = Lambda, y = CV_MSE)) +
+  geom_ribbon(
+    aes(ymin = CV_MSE - SE, ymax = CV_MSE + SE),
+    fill = "#AFCBE3",
+    alpha = 0.35
+  ) +
+  geom_line(
+    color = "#2874A6",
+    linewidth = 1.15
+  ) +
+  geom_vline(
+    data = filter(lambda_data, Type == "lambda_min"),
+    aes(xintercept = Lambda),
+    color = "#2874A6",
+    linewidth = 0.9
+  ) +
+  geom_vline(
+    data = filter(lambda_data, Type == "lambda_1se"),
+    aes(xintercept = Lambda),
+    color = "#D55E00",
+    linetype = "dashed",
+    linewidth = 0.9
+  ) +
+  geom_point(
+    data = lambda_data,
+    aes(x = Lambda, y = CV_MSE),
+    size = 2.2,
+    stroke = 0.3,
+    color = "black",
+    fill = "white",
+    shape = 21,
+    inherit.aes = FALSE
+  ) +
+  geom_text(
+    data = lambda_data,
+    aes(x = Lambda, y = CV_MSE, label = Label),
+    nudge_y = 1.8,
+    size = 3.2,
+    fontface = "bold",
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(
+    ~Method,
+    nrow = 1,
+    scales = "free_x"
+  ) +
+  scale_x_log10(
+    labels = nice_log_labels
+  ) +
+  labs(
+    title = "Selecting the Regularization Strength",
+    subtitle = "10-fold cross-validation across penalty values",
+    x = expression("Penalty strength (" * lambda * ")"),
+    y = expression("Cross-validation MSE (kg"^2 * ")"),
+    caption = "Blue line: mean CV error | Shaded region: ±1 SE | Solid line: λmin | Dashed line: λ1se"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.spacing = grid::unit(1.2, "lines"),
+    plot.caption = element_text(color = "grey45", size = 9),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
+```
+
+Cross-validation reveals different relationships between penalty strength and prediction error. Ridge exhibits a broad minimum at intermediate penalty values, illustrating how both insufficient and excessive regularization can increase prediction error. In contrast, LASSO and Elastic Net show relatively stable errors at smaller penalties, followed by increasing errors under stronger regularization.
+
+We use $\lambda_{\min}$ for the model comparisons that follow. The one-standard-error choice ($\lambda_{1se}$) illustrates how stronger regularization may be preferred when a simpler model is desirable.
+
+### Comparison of Fitted Models
+
+```{r}
+# Summarize tuning and variable selection
+model_summary <- data.frame(
+  Model = names(cv_models),
+  Alpha = unname(alphas),
+  Lambda = sapply(cv_models, function(m) m$lambda.min),
+  CV_MSE = sapply(cv_models, function(m) min(m$cvm)),
+  Selected = sapply(cv_models, function(m) {
+    sum(as.matrix(coef(m, s = "lambda.min"))[-1, 1] != 0)
+  })
+)
+
+model_summary |>
+  gt::gt() |>
+  gt::tab_header(
+    title = gt::md("**Regularization Model Comparison**"),
+    subtitle = "10-fold cross-validation | 60 training participants"
+  ) |>
+  gt::cols_label(
+    Model = "Method",
+    Alpha = "α",
+    Lambda = "Selected λ",
+    CV_MSE = "CV MSE (kg²)",
+    Selected = "Nonzero predictors"
+  ) |>
+  gt::fmt_number(
+    columns = Lambda,
+    decimals = 3
+  ) |>
+  gt::fmt_number(
+    columns = CV_MSE,
+    decimals = 2
+  ) |>
+  gt::cols_align(
+    align = "center",
+    columns = c(Alpha, Lambda, CV_MSE, Selected)
+  ) |>
+  gt::tab_options(
+    table.font.size = gt::px(14),
+    data_row.padding = gt::px(8)
+  )
+```
+
+### Coefficient Paths: How Regularization Changes the Model
+
+The coefficient paths show how regression coefficients change as the regularization penalty ($\lambda$) varies. Unlike the cross-validation curves, which measure prediction error, these plots illustrate how each method shrinks or eliminates predictors.
+
+To keep the figure readable, we highlight six predictors: the two with the largest absolute standardized coefficients within each EIM measurement type, considering all three fitted models at their selected penalties. The same six predictors are highlighted across Ridge, LASSO and Elastic Net, while the remaining coefficient paths appear in faint gray. All 243 predictors are included in model fitting.
+
+The code extracts coefficient estimates across the penalty sequence from `glmnet.fit$beta`. We multiply each coefficient by its predictor's training-set standard deviation to express effects on a comparable scale. The `selected_ids` object identifies the six highlighted predictors, while `lambda.min` and `lambda.1se` indicate the penalties chosen by cross-validation.
+
+```{r}
+#| label: fig-coefficient-paths
+#| fig-cap: "Coefficient paths for six selected EIM predictors across Ridge, LASSO, and Elastic Net. Gray lines show all 243 predictors."
+#| fig-width: 12
+#| fig-height: 5.8
+#| warning: false
+#| message: false
+#| code-fold: true
+
+library(ggplot2)
+library(dplyr)
+
+# Standardize coefficient scale (per 1 SD of each predictor)
+predictor_sd <- apply(x_train, 2, sd)
+
+# Identify informative predictors across all three methods
+importance <- sapply(cv_models, function(model) {
+  beta <- as.numeric(coef(model, s = "lambda.min"))[-1]
+  abs(beta * predictor_sd)
+})
+
+# Select two predictors per EIM parameter, consistently across methods
+groups <- list(
+  "Resistance" = seq_len(nf),
+  "Reactance" = nf + seq_len(nf),
+  "Phase angle" = 2 * nf + seq_len(nf)
+)
+
+selected_ids <- unlist(lapply(groups, function(ids) {
+  scores <- apply(importance[ids, , drop = FALSE], 1, max)
+  ids[order(scores, decreasing = TRUE)[1:2]]
+}), use.names = FALSE)
+
+# Extract coefficient paths for ALL predictors
+all_path_data <- bind_rows(lapply(names(cv_models), function(method) {
+  
+  fit <- cv_models[[method]]$glmnet.fit
+  beta <- as.matrix(fit$beta)
+  
+  data.frame(
+    Method = method,
+    FeatureID = rep(seq_len(nrow(beta)), each = ncol(beta)),
+    Lambda = rep(fit$lambda, times = nrow(beta)),
+    Coefficient = as.vector(t(beta)) * rep(predictor_sd, each = ncol(beta))
+  )
+}))
+
+# Extract coefficient paths for the SAME six predictors
+selected_path_data <- bind_rows(lapply(names(cv_models), function(method) {
+  
+  fit <- cv_models[[method]]$glmnet.fit
+  beta <- as.matrix(fit$beta)
+  
+  bind_rows(lapply(selected_ids, function(j) {
+    data.frame(
+      Method = method,
+      Feature = colnames(x_train)[j],
+      FeatureID = j,
+      Lambda = fit$lambda,
+      Coefficient = as.numeric(beta[j, ]) * predictor_sd[j],
+      Parameter = if (j <= nf) {
+        "Resistance"
+      } else if (j <= 2 * nf) {
+        "Reactance"
+      } else {
+        "Phase angle"
+      }
+    )
+  }))
+}))
+
+# Penalties selected by cross-validation
+lambda_lines <- bind_rows(lapply(names(cv_models), function(method) {
+  data.frame(
+    Method = method,
+    Lambda = c(
+      cv_models[[method]]$lambda.min,
+      cv_models[[method]]$lambda.1se
+    ),
+    Choice = c("Minimum CV error", "1-SE rule")
+  )
+}))
+
+# Stronger regularization on the left, weaker on the right
+all_path_data$X <- -log10(all_path_data$Lambda)
+selected_path_data$X <- -log10(selected_path_data$Lambda)
+lambda_lines$X <- -log10(lambda_lines$Lambda)
+
+# Order panels
+all_path_data$Method <- factor(
+  all_path_data$Method,
+  levels = c("Ridge", "LASSO", "Elastic Net")
+)
+
+selected_path_data$Method <- factor(
+  selected_path_data$Method,
+  levels = c("Ridge", "LASSO", "Elastic Net")
+)
+
+lambda_lines$Method <- factor(
+  lambda_lines$Method,
+  levels = c("Ridge", "LASSO", "Elastic Net")
+)
+
+ggplot() +
+  geom_hline(
+    yintercept = 0,
+    color = "grey65",
+    linewidth = 0.5
+  ) +
+  geom_line(
+    data = all_path_data,
+    aes(x = X, y = Coefficient, group = interaction(Method, FeatureID)),
+    color = "grey75",
+    alpha = 0.25,
+    linewidth = 0.35
+  ) +
+  geom_line(
+    data = selected_path_data,
+    aes(x = X, y = Coefficient, color = Parameter, group = Feature),
+    linewidth = 1.1
+  ) +
+  geom_vline(
+    data = filter(lambda_lines, Choice == "Minimum CV error"),
+    aes(xintercept = X),
+    color = "grey25",
+    linewidth = 0.8
+  ) +
+  geom_vline(
+    data = filter(lambda_lines, Choice == "1-SE rule"),
+    aes(xintercept = X),
+    color = "grey25",
+    linetype = "dashed",
+    linewidth = 0.8
+  ) +
+  facet_wrap(
+    ~Method,
+    nrow = 1,
+    scales = "free_x"
+  ) +
+  scale_x_continuous(
+    labels = function(x) {
+      format(signif(10^(-x), 2), scientific = FALSE, trim = TRUE)
+    }
+  )+
+  scale_color_manual(
+    values = c(
+      "Resistance" = "#0072B2",
+      "Reactance" = "#D55E00",
+      "Phase angle" = "#009E73"
+    ),
+    name = "EIM parameter"
+  ) +
+  labs(
+    title = "How Regularization Changes Regression Coefficients",
+    subtitle = "Six shared EIM predictors highlighted across three methods",
+    x = "Penalty strength (λ): stronger ← → weaker",
+    y = "Coefficient per 1 SD increase (kg)",
+    caption = "Gray: all 243 predictors | Colored: six selected predictors | Solid line: λmin | Dashed line: λ1se"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.spacing = grid::unit(1.3, "lines"),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    plot.caption = element_text(color = "grey45", size = 9)
+  )
+```
+
+**Interpretation.** As the penalty becomes stronger (moving left), Ridge progressively shrinks coefficients toward zero, whereas LASSO and Elastic Net can set coefficients exactly to zero. Elastic Net's L2 component also encourages correlated predictors to have similar coefficients, although this grouping behavior must be evaluated using the selected features rather than inferred from these paths alone.
+
+The solid vertical line marks $\lambda_{\min}$, while the dashed line indicates the more strongly regularized $\lambda_{1se}$ solution.
+
+### Variable Selection and the Grouping Effect
+
+One of the main motivations for Elastic Net is its ability to retain groups of correlated predictors, whereas LASSO may select only a few representatives.
+
+To explore this, we compare which EIM features receive nonzero coefficients at the cross-validated penalty ($\lambda_{\min}$). Each point represents a retained predictor, positioned according to its measurement frequency. Point size indicates the absolute standardized coefficient, allowing us to distinguish the predictors with larger contributions to the fitted model.
+
+The code extracts the coefficients estimated at $\lambda_{\min}$ for LASSO and Elastic Net using `coef()`. Predictors with coefficients effectively equal to zero are excluded, leaving only the selected features. Coefficients are multiplied by each predictor's standard deviation in the training data so their magnitudes can be compared on a common scale. We then plot the retained predictors by frequency and EIM measurement type.
+
+```{r}
+#| label: fig-eim-feature-selection
+#| fig-cap: "EIM predictors retained by LASSO and Elastic Net at the cross-validated penalty. Point size represents absolute standardized coefficient magnitude."
+#| fig-width: 11
+#| fig-height: 5.5
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(ggplot2)
+library(dplyr)
+
+# Extract selected coefficients from the two sparse models
+selection_data <- bind_rows(lapply(
+  c("LASSO", "Elastic Net"),
+  function(method) {
+
+    beta <- as.numeric(
+      coef(cv_models[[method]], s = "lambda.min")
+    )[-1]
+
+    data.frame(
+      Method = method,
+      Feature = colnames(x_train),
+      Frequency = rep(freqs, times = 3),
+      Parameter = rep(
+        c("Resistance", "Reactance", "Phase angle"),
+        each = nf
+      ),
+      Coefficient = beta * apply(x_train, 2, sd)
+    )
+  }
+)) |>
+  filter(abs(Coefficient) > 1e-6) |>
+  mutate(
+    Method = factor(
+      Method,
+      levels = c("LASSO", "Elastic Net")
+    ),
+    Parameter = factor(
+      Parameter,
+      levels = c("Resistance", "Reactance", "Phase angle")
+    )
+  )
+
+parameter_colors <- c(
+  "Resistance" = "#0072B2",
+  "Reactance" = "#D55E00",
+  "Phase angle" = "#009E73"
+)
+
+ggplot(
+  selection_data,
+  aes(
+    x = Frequency,
+    y = Parameter,
+    color = Parameter,
+    size = abs(Coefficient)
+  )
+) +
+  geom_point(alpha = 0.8) +
+  facet_wrap(~Method, ncol = 1) +
+  scale_x_log10(
+    breaks = c(20, 50, 100, 500, 1000, 10000),
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  scale_color_manual(values = parameter_colors, guide = "none") +
+  scale_size_continuous(
+    name = "|Standardized coefficient| (kg)",
+    range = c(2, 7)
+  ) +
+  labs(
+    title = "Which EIM Features Are Retained?",
+    subtitle = "Predictor selection at the minimum cross-validation error",
+    x = "Frequency (kHz, log scale)",
+    y = NULL,
+    caption = "Each point represents one predictor with a nonzero coefficient. Models use all 243 candidate features."
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.spacing = grid::unit(1.2, "lines"),
+    legend.position = "bottom",
+    plot.caption = element_text(color = "grey45", size = 9)
+  )
+```
+
+**Interpretation.** This figure shows the distribution of selected EIM predictors across frequencies. LASSO tends to produce a sparser solution, while Elastic Net can retain several correlated predictors from nearby frequency regions.
+
+Selection of neighboring frequencies would be consistent with the grouping effect described by Zou and Hastie. However, retaining more predictors alone does not establish that Elastic Net performs better: predictive accuracy must also be assessed on the independent test set.
+
+### Predictive Performance on Independent Test Data
+
+Cross-validation was used to select the regularization penalty for each model. However, the final comparison should evaluate predictions on data that were not used during model fitting or tuning.
+
+We evaluate Ridge, LASSO and Elastic Net using the 200 independent simulated test participants. Predictive accuracy is assessed using mean squared error (MSE), root mean squared error (RMSE) and mean absolute error (MAE). MSE averages squared prediction errors, RMSE expresses the error in the original units (kg) while giving more weight to larger errors, and MAE measures the average absolute difference between predicted and observed handgrip strength. Lower values indicate better predictive performance.
+
+In the code below: For each model, `predict()` generates handgrip-strength predictions using `x_test`, the independent test predictors. The argument `s = "lambda.min"` specifies that predictions should use the penalty selected during cross-validation. We then compare these predictions with the observed test values (`y_test`) and calculate MSE, RMSE, and MAE. The `gt()` package formats the results into a comparison table.
+
+```{r}
+#| label: tbl-test-performance
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(dplyr)
+library(gt)
+
+# Generate predictions on the untouched test dataset
+test_predictions <- lapply(names(cv_models), function(method) {
+
+  predictions <- as.numeric(
+    predict(
+      cv_models[[method]],
+      newx = x_test,
+      s = "lambda.min"
+    )
+  )
+
+  data.frame(
+    Model = method,
+    Observed = y_test,
+    Predicted = predictions
+  )
+}) |>
+  bind_rows()
+
+# Calculate independent test-set performance
+test_results <- test_predictions |>
+  group_by(Model) |>
+  summarise(
+    MSE = mean((Observed - Predicted)^2),
+    RMSE = sqrt(MSE),
+    MAE = mean(abs(Observed - Predicted)),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Model = factor(
+      Model,
+      levels = c("Ridge", "LASSO", "Elastic Net")
+    )
+  ) |>
+  arrange(Model)
+
+# Display results
+test_results |>
+  gt() |>
+  tab_header(
+    title = md("**Independent Test-Set Performance**"),
+    subtitle = "200 simulated participants excluded from model fitting and tuning"
+  ) |>
+  cols_label(
+    Model = "Method",
+    MSE = "MSE (kg²)",
+    RMSE = "RMSE (kg)",
+    MAE = "MAE (kg)"
+  ) |>
+  fmt_number(
+    columns = c(MSE, RMSE, MAE),
+    decimals = 2
+  ) |>
+  cols_align(
+    align = "center",
+    columns = c(MSE, RMSE, MAE)
+  ) |>
+  tab_options(
+    table.font.size = px(14),
+    data_row.padding = px(8)
+  )
+```
+
+To visualize prediction accuracy, we plot observed against predicted handgrip strength for each method. The dashed diagonal line represents perfect agreement between observed and predicted values.
+
+```{r}
+#| label: fig-test-predictions
+#| fig-cap: "Observed versus predicted handgrip strength for 200 independent simulated test participants."
+#| fig-width: 11
+#| fig-height: 4.8
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(ggplot2)
+
+test_predictions$Model <- factor(
+  test_predictions$Model,
+  levels = c("Ridge", "LASSO", "Elastic Net")
+)
+
+ggplot(
+  test_predictions,
+  aes(x = Observed, y = Predicted)
+) +
+  geom_abline(
+    intercept = 0,
+    slope = 1,
+    linetype = "dashed",
+    color = "#D55E00",
+    linewidth = 0.8
+  ) +
+  geom_point(
+    color = "#2874A6",
+    alpha = 0.50,
+    size = 1.8
+  ) +
+  facet_wrap(~Model, nrow = 1) +
+  coord_equal() +
+  labs(
+    title = "How Well Do the Models Predict New Participants?",
+    subtitle = "Observed versus predicted handgrip strength",
+    x = "Observed HGS (kg)",
+    y = "Predicted HGS (kg)",
+    caption = "Dashed line: perfect prediction | Each point: one independent test participant"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.minor = element_blank(),
+    panel.spacing = grid::unit(1.2, "lines"),
+    plot.caption = element_text(color = "grey45", size = 9)
+  )
+```
+
+**Interpretation.** All three models show similar predictive performance on the independent test dataset. Predictions generally follow observed handgrip strength, although the models tend to overestimate lower values and underestimate higher values, suggesting some compression toward the mean. Ridge achieves a slightly lower test error, but the differences between methods are small. Thus, in this simulation, the main distinction between the methods lies in how they regularize coefficients and select correlated predictors rather than in predictive accuracy.
+
+### Discussion and Key Takeaways
+
+This simulation illustrates how Ridge, LASSO and Elastic Net behave when the number of predictors exceeds the number of training observations ($p > n$) and many predictors are highly correlated.
+
+Although all three methods achieved similar predictive performance on the independent test dataset, they differed considerably in how they handled the EIM features:
+
+- **Ridge** retained all 243 predictors, shrinking their coefficients without performing variable selection.
+- **LASSO** produced the sparsest model, retaining only 8 predictors at the cross-validated penalty.
+- **Elastic Net** retained 36 predictors, illustrating how combining L1 and L2 penalties can produce a less sparse solution than LASSO.
+
+The variable-selection results are consistent with the motivation behind Zou and Hastie's (2005) Elastic Net: rather than selecting only a few representatives from highly correlated variables, Elastic Net can retain multiple related predictors. However, selecting more predictors does not by itself prove a grouping effect and the selected features should not automatically be interpreted as biologically important.
+
+On the independent test dataset, Ridge had the lowest RMSE (3.82 kg), followed by Elastic Net (3.86 kg) and LASSO (3.87 kg). These small differences do not establish a meaningful advantage for any method.
+
+**The main takeaway** is that regularization is not only about minimizing prediction error. Different penalties produce different coefficient estimates and variable-selection patterns, even when predictive performance is nearly identical.

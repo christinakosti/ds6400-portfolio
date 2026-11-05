@@ -13,6 +13,7 @@ book:
     - 04-random-forests.qmd
     - 05-polynomial-regression.qmd
     - HW7.qmd
+    - 07-regularization-elastic-net.qmd
 
 format:
   html:
