@@ -1,0 +1,1081 @@
+---
+title: "HW8: Interactions and Information Sharing"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## Introduction
+
+Physical activity and sedentary behaviors are associated with metabolic health, but these relationships may vary depending on age and adiposity. This analysis uses data from the National Health and Nutrition Examination Survey (NHANES) to investigate whether the associations of age and body mass index (BMI) with HDL cholesterol differ across groups defined by recreational physical activity and television viewing time.
+
+The primary objective of this homework is to explore **interactions, nonlinear relationships, and information sharing across groups** in regression modeling. Specifically, we aim to:
+
+1. Compare four information-sharing models (fully shared, partial sharing, full interaction, and separate models) using cross-validated mean squared error (CV-MSE).
+2. Fit additive and group-interactive nonlinear response surfaces using restricted cubic splines, compare their predictive performance, and visualize group-specific surfaces with Plotly.
+3. Apply Ridge and LASSO regularization using sum-to-zero contrasts and selective penalization to examine which group-specific deviations remain after shrinkage.
+4. Determine which degree of information sharing is best supported by the data, considering predictive performance and differences between group-specific curves.
+5. Derive the transformation matrix $R$ connecting standard reference coding to sum-to-zero contrast coding ($Z = XR$).
+
+
+Together, these analyses demonstrate how interactions and regularization can model heterogeneous relationships while controlling model complexity.
+
+## Data Preparation
+
+Here I analyze data from the 2011–2012 National Health and Nutrition Examination Survey (NHANES), restricting the analysis to adults aged 20 years and older.
+
+Participants are categorized into four groups based on self-reported recreational physical activity and television viewing time. Low TV viewing is defined as 0–2 hours/day, and high TV viewing as 3 or more hours/day.
+
+```{r}
+#| label: data-preparation
+#| message: false
+#| warning: false
+#| results: hide
+#| code-fold: true
+
+library(NHANES)
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+set.seed(64)
+
+# Select variables from the 2011–2012 NHANES cycle
+d0 <- NHANES::NHANES |>
+  filter(SurveyYr == "2011_12", Age >= 20) |>
+  select(DirectChol, Age, BMI,
+         PhysActive, TVHrsDay)
+
+# Define low and high television-viewing categories
+d <- d0 |>
+  mutate(
+    TV_group = case_when(
+      as.character(TVHrsDay) %in% c(
+        "0_hrs", "0_to_1hr", "0_to_1_hr",
+        "1_hr", "2_hr"
+      ) ~ "Low",
+
+      as.character(TVHrsDay) %in% c(
+        "3_hr", "4_hr", "More_4_hr"
+      ) ~ "High",
+
+      TRUE ~ NA_character_
+    ),
+
+    # Combine activity status and TV viewing
+    ActivityTV = case_when(
+      PhysActive == "Yes" & TV_group == "Low" ~
+        "Active / Low TV",
+
+      PhysActive == "Yes" & TV_group == "High" ~
+        "Active / High TV",
+
+      PhysActive == "No" & TV_group == "Low" ~
+        "Inactive / Low TV",
+
+      PhysActive == "No" & TV_group == "High" ~
+        "Inactive / High TV",
+
+      TRUE ~ NA_character_
+    )
+  ) |>
+  drop_na(DirectChol, Age, BMI, ActivityTV) |>
+  mutate(
+    ActivityTV = factor(ActivityTV, levels = c(
+      "Active / Low TV",
+      "Active / High TV",
+      "Inactive / Low TV",
+      "Inactive / High TV"
+    ))
+  ) |>
+  as.data.frame()
+
+# Verify all four groups contain observations
+stopifnot(
+  nrow(d) > 0,
+  all(table(d$ActivityTV) > 0)
+)
+```
+
+The final analytic sample includes `r format(nrow(d), big.mark = ",")` adults with complete data for HDL cholesterol, age, BMI, and behavioral group classification.
+
+```{r}
+#| label: tbl-sample-characteristics
+#| tbl-cap: "Sample characteristics by physical activity and TV viewing group"
+#| echo: false
+
+d |>
+  group_by(ActivityTV) |>
+  summarise(
+    N = n(),
+    `Age (years)` = sprintf("%.1f (%.1f)",
+                            mean(Age), sd(Age)),
+    `BMI (kg/m²)` = sprintf("%.1f (%.1f)",
+                           mean(BMI), sd(BMI)),
+    `HDL (mmol/L)` = sprintf("%.2f (%.2f)",
+                            mean(DirectChol),
+                            sd(DirectChol)),
+    .groups = "drop"
+  ) |>
+  knitr::kable(
+    col.names = c(
+      "Behavioral group", "N", "Age (years)",
+      "BMI (kg/m²)", "HDL (mmol/L)"
+    ),
+    align = c("l", "r", "r", "r", "r")
+  )
+```
+
+*Values are presented as mean (SD) for continuous variables. Physical activity refers to reported moderate- or vigorous-intensity recreational activity; television viewing time is used as an indicator of sedentary behavior.*
+
+## Comparing Information-Sharing Models
+
+I first examine whether the nonlinear relationship between age and HDL cholesterol differs across behavioral groups.
+
+Four models are compared, ranging from a fully shared age–HDL relationship to completely separate group-specific models. Restricted cubic splines with four knots allow nonlinear age associations.
+
+Predictive performance is evaluated using 10-fold cross-validation, with identical folds across models. Lower mean squared error (MSE) indicates better predictive performance.
+
+```{r}
+#| label: compare-sharing-models
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(rms)
+library(dplyr)
+
+set.seed(64)
+
+# Create stratified folds to retain all groups
+fold_id <- integer(nrow(d))
+
+for (g in levels(d$ActivityTV)) {
+  idx <- which(d$ActivityTV == g)
+  fold_id[idx] <- sample(rep(1:10, length.out = length(idx)))
+}
+
+# Evaluate all four models on identical folds
+cv_results <- lapply(1:10, function(k) {
+
+  train <- d[fold_id != k, ]
+  test  <- d[fold_id == k, ]
+
+  # Select knots from the training observations
+  age_knots <- attr(rms::rcs(train$Age, 4), "parms")
+
+  # Model 1: Fully shared
+  m1 <- lm(
+    DirectChol ~ rms::rcs(Age, age_knots),
+    data = train
+  )
+
+  # Model 2: Shared shape, different intercepts
+  m2 <- lm(
+    DirectChol ~ rms::rcs(Age, age_knots) + ActivityTV,
+    data = train
+  )
+
+  # Model 3: Full interaction
+  m3 <- lm(
+    DirectChol ~ rms::rcs(Age, age_knots) * ActivityTV,
+    data = train
+  )
+
+  # Model 4: Separate model for each group
+  m4 <- lapply(levels(d$ActivityTV), function(g) {
+    lm(
+      DirectChol ~ rms::rcs(Age, age_knots),
+      data = train[train$ActivityTV == g, ]
+    )
+  })
+
+  names(m4) <- levels(d$ActivityTV)
+
+  pred4 <- numeric(nrow(test))
+
+  for (g in levels(d$ActivityTV)) {
+    idx <- which(test$ActivityTV == g)
+
+    pred4[idx] <- predict(
+      m4[[g]],
+      newdata = test[idx, ]
+    )
+  }
+
+  # Calculate held-out prediction errors
+  predictions <- list(
+    "Fully shared" = predict(m1, newdata = test),
+    "Partial sharing" = predict(m2, newdata = test),
+    "Full interaction" = predict(m3, newdata = test),
+    "No sharing" = pred4
+  )
+
+  data.frame(
+    Fold = k,
+    Model = names(predictions),
+    MSE = vapply(
+      predictions,
+      function(p) mean((test$DirectChol - p)^2),
+      numeric(1)
+    )
+  )
+}) |>
+  bind_rows()
+
+# Summarize cross-validated performance
+cv_summary <- cv_results |>
+  group_by(Model) |>
+  summarise(
+    CV_MSE = mean(MSE),
+    SD = sd(MSE),
+    .groups = "drop"
+  ) |>
+  arrange(CV_MSE)
+```
+
+```{r}
+#| label: tbl-sharing-models
+#| tbl-cap: "Cross-validated prediction error across information-sharing models"
+#| echo: false
+
+cv_summary |>
+  mutate(
+    `CV-MSE` = round(CV_MSE, 4),
+    `SD across folds` = round(SD, 4)
+  ) |>
+  select(Model, `CV-MSE`, `SD across folds`) |>
+  knitr::kable(
+    align = c("l", "r", "r")
+  )
+```
+
+**Interpretation:** The **partial-sharing model** achieved the lowest CV-MSE (0.1516), although differences between models were small. Allowing behavioral groups to have different HDL levels improved prediction slightly compared with the fully shared model (0.1542), while group-specific nonlinear curves provided little additional benefit. Overall, the results modestly favor **partial sharing**, suggesting that group differences may be adequately captured by intercept shifts rather than distinct age-related relationships.
+
+### Visualizing Group-Specific Age Relationships
+
+```{r}
+#| label: fig-age-hdl-curves
+#| fig-cap: "Estimated nonlinear relationship between age and HDL cholesterol by behavioral group"
+#| message: false
+#| warning: false
+#| echo: false
+
+library(ggplot2)
+
+# Refit the full interaction model on the full dataset
+age_knots <- attr(rms::rcs(d$Age, 4), "parms")
+
+m_full <- lm(
+  DirectChol ~ rms::rcs(Age, age_knots) * ActivityTV,
+  data = d
+)
+
+# Prediction grid
+plot_grid <- expand.grid(
+  Age = seq(min(d$Age), max(d$Age), length.out = 200),
+  ActivityTV = levels(d$ActivityTV)
+)
+
+plot_grid$pred <- predict(m_full, newdata = plot_grid)
+
+ggplot(d, aes(x = Age, y = DirectChol, color = ActivityTV)) +
+  geom_point(alpha = 0.18, size = 1) +
+  geom_line(
+    data = plot_grid,
+    aes(x = Age, y = pred, color = ActivityTV),
+    linewidth = 1.2
+  ) +
+  labs(
+    x = "Age (years)",
+    y = "HDL cholesterol (mmol/L)",
+    color = "Behavioral group"
+  ) +
+  theme_classic()
+```
+
+### Comparing Partial Sharing and Full Interaction
+
+To illustrate differences in model flexibility, we compare the estimated age–HDL relationships from the partial-sharing and full-interaction models. The partial-sharing model assumes a common nonlinear shape across behavioral groups, whereas the full-interaction model allows each group to follow a distinct curve.
+
+```{r}
+#| label: fig-age-hdl
+#| fig-cap: "Age–HDL relationships by behavioral group under partial sharing and full interaction."
+#| fig-width: 9
+#| fig-height: 6
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# Use the same knots for both models
+age_knots <- attr(rms::rcs(d$Age, 4), "parms")
+
+m_partial <- lm(
+  DirectChol ~ rms::rcs(Age, age_knots) + ActivityTV,
+  data = d
+)
+
+m_full <- lm(
+  DirectChol ~ rms::rcs(Age, age_knots) * ActivityTV,
+  data = d
+)
+
+# Create prediction grid
+grid <- expand.grid(
+  Age = seq(min(d$Age), max(d$Age), length.out = 200),
+  ActivityTV = levels(d$ActivityTV)
+)
+
+# Predict with both models
+plot_data <- bind_rows(
+  grid |>
+    mutate(
+      HDL = predict(m_partial, newdata = grid),
+      Model = "Partial sharing"
+    ),
+  grid |>
+    mutate(
+      HDL = predict(m_full, newdata = grid),
+      Model = "Full interaction"
+    )
+)
+
+# Visualize group-specific relationships
+ggplot(d, aes(x = Age, y = DirectChol)) +
+  geom_point(
+    color = "grey65",
+    alpha = 0.12,
+    size = 0.7
+  ) +
+  geom_line(
+    data = plot_data,
+    aes(y = HDL, color = Model, linetype = Model),
+    linewidth = 1.1
+  ) +
+  facet_wrap(~ ActivityTV, ncol = 2) +
+  scale_color_manual(
+    values = c(
+      "Partial sharing" = "#2878B5",
+      "Full interaction" = "#D17A36"
+    )
+  ) +
+  labs(
+    x = "Age (years)",
+    y = "HDL cholesterol (mmol/L)",
+    color = NULL,
+    linetype = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(face = "bold")
+  )
+```
+
+## Group-Specific Nonlinear Response Surfaces
+
+We extend the analysis by incorporating BMI as a second continuous predictor. Restricted cubic splines with four knots allow nonlinear age–HDL and BMI–HDL associations, while their interaction allows the association with one predictor to depend on the other.
+
+Two models are compared: a shared response surface with group-specific intercepts and a fully interactive model with group-specific surfaces. Predictive performance is evaluated using the same 10-fold cross-validation splits as Task 1.
+
+```{r}
+#| label: compare-response-surfaces
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# Compare models using the same folds as Task 1
+cv_surfaces <- lapply(1:10, function(k) {
+
+  train <- d[fold_id != k, ]
+  test  <- d[fold_id == k, ]
+
+  # Calculate spline knots from training data
+  age_k <- attr(rms::rcs(train$Age, 4), "parms")
+  bmi_k <- attr(rms::rcs(train$BMI, 4), "parms")
+
+  # Model 1: Shared surface with group-specific offsets
+  m_shared <- lm(
+    DirectChol ~ rms::rcs(Age, age_k) *
+      rms::rcs(BMI, bmi_k) + ActivityTV,
+    data = train
+  )
+
+  # Model 2: Group-specific nonlinear surfaces
+  m_interactive <- lm(
+    DirectChol ~ rms::rcs(Age, age_k) *
+      rms::rcs(BMI, bmi_k) * ActivityTV,
+    data = train
+  )
+
+  # Held-out predictions
+  pred_shared <- predict(m_shared, newdata = test)
+  pred_interactive <- predict(m_interactive, newdata = test)
+
+  data.frame(
+    Fold = k,
+    Model = c(
+      "Shared surface",
+      "Group-specific surfaces"
+    ),
+    MSE = c(
+      mean((test$DirectChol - pred_shared)^2),
+      mean((test$DirectChol - pred_interactive)^2)
+    )
+  )
+}) |>
+  dplyr::bind_rows()
+
+# Summarize prediction performance
+cv_surface_summary <- cv_surfaces |>
+  group_by(Model) |>
+  summarise(
+    CV_MSE = mean(MSE),
+    SD = sd(MSE),
+    .groups = "drop"
+  ) |>
+  arrange(CV_MSE)
+```
+
+```{r}
+#| label: tbl-response-surfaces
+#| tbl-cap: "Cross-validated performance of nonlinear response surface models."
+#| echo: false
+
+cv_surface_summary |>
+  transmute(
+    Model,
+    `CV-MSE` = round(CV_MSE, 4),
+    `SD across folds` = round(SD, 4)
+  ) |>
+  knitr::kable(
+    align = c("l", "r", "r")
+  )
+```
+
+### Interactive Group-Specific Response Surfaces
+
+We visualize the fitted Age–BMI–HDL relationships from the fully interactive model. Each surface represents predicted HDL cholesterol across age and BMI for one behavioral group.
+
+For comparability, all surfaces use the same plotting ranges and color scale. The visualization is restricted to the approximate central overlapping ranges of age and BMI across groups to reduce extrapolation.
+
+```{r}
+#| label: prepare-response-surfaces
+#| include: false
+
+# Refit the interactive model using all observations
+age_k_all <- attr(rms::rcs(d$Age, 4), "parms")
+bmi_k_all <- attr(rms::rcs(d$BMI, 4), "parms")
+
+m_surface <- lm(
+  DirectChol ~ rms::rcs(Age, age_k_all) *
+    rms::rcs(BMI, bmi_k_all) * ActivityTV,
+  data = d
+)
+
+# Identify central ranges shared by all groups
+group_ranges <- d |>
+  group_by(ActivityTV) |>
+  summarise(
+    age_low = quantile(Age, 0.10),
+    age_high = quantile(Age, 0.90),
+    bmi_low = quantile(BMI, 0.10),
+    bmi_high = quantile(BMI, 0.90),
+    .groups = "drop"
+  )
+
+age_seq <- seq(
+  max(group_ranges$age_low),
+  min(group_ranges$age_high),
+  length.out = 45
+)
+
+bmi_seq <- seq(
+  max(group_ranges$bmi_low),
+  min(group_ranges$bmi_high),
+  length.out = 45
+)
+
+# Calculate predicted HDL for each behavioral group
+surface_data <- lapply(levels(d$ActivityTV), function(g) {
+
+  grid <- expand.grid(
+    Age = age_seq,
+    BMI = bmi_seq
+  )
+
+  grid$ActivityTV <- factor(
+    g, levels = levels(d$ActivityTV)
+  )
+
+  grid$HDL <- as.numeric(
+    predict(m_surface, newdata = grid)
+  )
+
+  grid
+})
+
+names(surface_data) <- levels(d$ActivityTV)
+
+# Set a common HDL scale across surfaces
+hdl_range <- range(
+  unlist(lapply(surface_data, function(x) x$HDL))
+)
+
+# Reusable interactive surface function
+make_surface <- function(group_name) {
+
+  grid <- surface_data[[group_name]]
+
+  # Plotly expects rows = BMI, columns = Age
+  z <- t(matrix(
+    grid$HDL,
+    nrow = length(age_seq),
+    ncol = length(bmi_seq)
+  ))
+
+  plotly::plot_ly(
+    x = age_seq,
+    y = bmi_seq,
+    z = z,
+    type = "surface",
+    colorscale = "Viridis",
+    cmin = hdl_range[1],
+    cmax = hdl_range[2],
+    showscale = TRUE,
+    colorbar = list(title = "HDL")
+  ) |>
+    plotly::layout(
+      title = list(text = group_name),
+      scene = list(
+        xaxis = list(title = "Age (years)"),
+        yaxis = list(title = "BMI (kg/m²)"),
+        zaxis = list(
+          title = "HDL (mmol/L)",
+          range = hdl_range
+        )
+      ),
+      margin = list(l = 0, r = 0, b = 0, t = 40)
+    )
+}
+```
+
+::: {.panel-tabset}
+
+### Active / Low TV
+
+```{r}
+#| echo: false
+#| warning: false
+
+make_surface("Active / Low TV")
+```
+
+### Active / High TV
+
+```{r}
+#| echo: false
+#| warning: false
+
+make_surface("Active / High TV")
+```
+
+### Inactive / Low TV
+
+```{r}
+#| echo: false
+#| warning: false
+
+make_surface("Inactive / Low TV")
+```
+
+### Inactive / High TV
+
+```{r}
+#| echo: false
+#| warning: false
+
+make_surface("Inactive / High TV")
+```
+
+:::
+
+**Interpretation:** The group-specific surface model achieved a slightly lower CV-MSE than the shared-surface model (0.1269 vs. 0.1283), suggesting modest predictive benefit from allowing age–BMI associations to differ across behavioral groups. The fitted surfaces generally indicate lower predicted HDL at higher BMI, although the patterns vary across groups. Given the small improvement in prediction, the additional complexity should be interpreted cautiously.
+
+## Regularizing Group-Specific Relationships
+
+We return to the age–HDL models to investigate whether ridge and LASSO can determine the degree of information sharing across behavioral groups.
+
+Using sum-to-zero contrasts (`contr.sum`), the model is expressed as a shared age–HDL curve plus group-specific deviations. We leave the shared spline terms unpenalized and apply regularization only to the group-specific terms. Both penalties are tuned using the same 10-fold cross-validation splits as Task 1.
+
+```{r}
+#| label: regularized-group-models
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(glmnet)
+
+# Reparameterize the grouping variable
+d_reg <- d
+contrasts(d_reg$ActivityTV) <- contr.sum(
+  nlevels(d_reg$ActivityTV)
+)
+
+# Use a common spline basis
+age_knots_reg <- attr(rms::rcs(d_reg$Age, 4), "parms")
+
+form_reg <- DirectChol ~
+  rms::rcs(Age, age_knots_reg) * ActivityTV
+
+X_full <- model.matrix(form_reg, data = d_reg)
+
+# Identify global and group-deviation terms
+term_labels <- attr(terms(form_reg), "term.labels")
+assign_vec <- attr(X_full, "assign")
+
+deviation_terms <- grep(
+  "ActivityTV", term_labels, fixed = TRUE
+)
+
+# 0 = unpenalized global spline
+# 1 = penalized group-specific deviation
+pf_full <- as.integer(assign_vec %in% deviation_terms)
+
+# glmnet estimates its own intercept
+X_reg <- X_full[, -1, drop = FALSE]
+pf <- pf_full[-1]
+y_reg <- d_reg$DirectChol
+
+stopifnot(
+  sum(pf == 0) == 3,
+  sum(pf == 1) == 12
+)
+
+# Tune both methods using the existing CV folds
+cv_ridge <- glmnet::cv.glmnet(
+  x = X_reg,
+  y = y_reg,
+  alpha = 0,
+  penalty.factor = pf,
+  foldid = fold_id,
+  type.measure = "mse"
+)
+
+cv_lasso <- glmnet::cv.glmnet(
+  x = X_reg,
+  y = y_reg,
+  alpha = 1,
+  penalty.factor = pf,
+  foldid = fold_id,
+  type.measure = "mse"
+)
+
+# Summarize CV-selected models
+cv_regularized <- data.frame(
+  Model = c("Ridge", "LASSO"),
+  CV_MSE = c(min(cv_ridge$cvm), min(cv_lasso$cvm)),
+  Lambda_min = c(cv_ridge$lambda.min, cv_lasso$lambda.min),
+  Lambda_1se = c(cv_ridge$lambda.1se, cv_lasso$lambda.1se)
+)
+```
+
+```{r}
+#| label: tbl-regularized-models
+#| tbl-cap: "Cross-validated performance and selected penalty parameters."
+#| echo: false
+
+cv_regularized |>
+  transmute(
+    Model,
+    `CV-MSE` = round(CV_MSE, 4),
+    `Lambda (min)` = signif(Lambda_min, 3),
+    `Lambda (1-SE)` = signif(Lambda_1se, 3)
+  ) |>
+  knitr::kable(align = "lrrr")
+```
+
+### Comparing Shrinkage Across Behavioral Groups
+
+To evaluate how regularization changes the fitted curves, we compare predictions from the unpenalized full-interaction model with ridge and LASSO at their cross-validated minimum-MSE penalty values.
+
+```{r}
+#| label: prepare-regularized-curves
+#| include: false
+
+# Unpenalized model for comparison
+m_unpen <- lm(form_reg, data = d_reg)
+
+# Prediction grid
+age_reg_grid <- seq(
+  quantile(d_reg$Age, 0.05),
+  quantile(d_reg$Age, 0.95),
+  length.out = 100
+)
+
+grid_reg <- expand.grid(
+  Age = age_reg_grid,
+  ActivityTV = levels(d_reg$ActivityTV)
+)
+
+grid_reg$ActivityTV <- factor(
+  grid_reg$ActivityTV,
+  levels = levels(d_reg$ActivityTV)
+)
+
+contrasts(grid_reg$ActivityTV) <-
+  contrasts(d_reg$ActivityTV)
+
+# Construct prediction matrix with identical coding
+X_grid <- model.matrix(
+  delete.response(terms(form_reg)),
+  data = grid_reg
+)[, -1, drop = FALSE]
+
+stopifnot(
+  identical(colnames(X_reg), colnames(X_grid))
+)
+
+# Predict using all three models
+curve_predictions <- bind_rows(
+  grid_reg |>
+    mutate(
+      HDL = as.numeric(
+        predict(m_unpen, newdata = grid_reg)
+      ),
+      Model = "Full interaction"
+    ),
+
+  grid_reg |>
+    mutate(
+      HDL = as.numeric(
+        predict(
+          cv_ridge,
+          newx = X_grid,
+          s = "lambda.min"
+        )
+      ),
+      Model = "Ridge"
+    ),
+
+  grid_reg |>
+    mutate(
+      HDL = as.numeric(
+        predict(
+          cv_lasso,
+          newx = X_grid,
+          s = "lambda.min"
+        )
+      ),
+      Model = "LASSO"
+    )
+)
+```
+
+```{r}
+#| label: fig-regularized-curves
+#| fig-cap: "Group-specific age–HDL curves before and after regularization at the CV-selected penalty."
+#| fig-width: 9
+#| fig-height: 6
+#| echo: false
+
+ggplot(
+  curve_predictions,
+  aes(x = Age, y = HDL, color = Model, linetype = Model)
+) +
+  geom_line(linewidth = 1.1) +
+  facet_wrap(~ ActivityTV, ncol = 2) +
+  scale_color_manual(
+    values = c(
+      "Full interaction" = "#D17A36",
+      "Ridge" = "#2878B5",
+      "LASSO" = "#168B78"
+    )
+  ) +
+  labs(
+    x = "Age (years)",
+    y = "Predicted HDL cholesterol (mmol/L)",
+    color = NULL,
+    linetype = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  )
+```
+
+### Quantifying Group-Specific Deviations
+
+We quantify each group's deviation from the equally weighted average fitted curve using the root mean squared (RMS) difference across the age grid. Smaller values indicate greater similarity to the shared curve.
+
+For LASSO, we also count nonzero group-deviation coefficients. Each group has four possible deviation terms: an intercept difference and three age-spline differences.
+
+```{r}
+#| label: tbl-group-shrinkage
+#| tbl-cap: "Group-specific deviations from the shared age–HDL curve before and after regularization."
+#| echo: false
+#| message: false
+#| warning: false
+
+# RMS deviation from the average curve
+curve_distances <- curve_predictions |>
+  group_by(Model, Age) |>
+  mutate(
+    Deviation = HDL - mean(HDL)
+  ) |>
+  ungroup() |>
+  group_by(ActivityTV, Model) |>
+  summarise(
+    RMS = sqrt(mean(Deviation^2)),
+    .groups = "drop"
+  ) |>
+  pivot_wider(
+    names_from = Model,
+    values_from = RMS
+  )
+
+# Count retained LASSO deviation coefficients
+b_lasso <- as.numeric(
+  coef(cv_lasso, s = "lambda.min")
+)[-1]
+
+# First three groups have explicit contrast columns
+group_blocks <- lapply(1:3, function(j) {
+  idx <- grep(
+    paste0("ActivityTV", j, "$"),
+    colnames(X_reg)
+  )
+  b_lasso[idx]
+})
+
+stopifnot(all(lengths(group_blocks) == 4))
+
+# Fourth group's deviation is minus the sum of the others
+group_blocks[[4]] <- -Reduce(`+`, group_blocks)
+
+nonzero_count <- vapply(
+  group_blocks,
+  function(b) sum(abs(b) > 1e-8),
+  integer(1)
+)
+
+names(nonzero_count) <- levels(d_reg$ActivityTV)
+
+# Combine curve distances, sample sizes, and sparsity
+curve_distances |>
+  mutate(
+    N = as.integer(
+      table(d_reg$ActivityTV)[as.character(ActivityTV)]
+    ),
+    `LASSO nonzero (of 4)` =
+      nonzero_count[as.character(ActivityTV)]
+  ) |>
+  transmute(
+    Group = ActivityTV,
+    N,
+    `Unpenalized RMS` = round(`Full interaction`, 3),
+    `Ridge RMS` = round(Ridge, 3),
+    `LASSO RMS` = round(LASSO, 3),
+    `LASSO nonzero (of 4)`
+  ) |>
+  knitr::kable(
+    align = c("l", "r", "r", "r", "r", "r")
+  )
+```
+
+*RMS deviations are expressed in mmol/L and describe differences between fitted curves, not prediction errors. LASSO penalizes individual coefficients rather than complete group blocks, so a group can retain only part of its deviation from the shared curve.*
+
+### Sensitivity to Contrast Coding
+
+Because `contr.sum` represents the final group implicitly, coefficient-wise regularization may depend on which group occupies that position. We repeat LASSO with each behavioral group serving as the implicit level and compare the resulting deviations from the shared curve.
+
+```{r}
+#| label: contrast-coding-sensitivity
+#| message: false
+#| warning: false
+#| code-fold: true
+
+fit_alternative_coding <- function(implicit_group) {
+
+  lev <- c(
+    setdiff(levels(d$ActivityTV), implicit_group),
+    implicit_group
+  )
+
+  dat <- d
+  dat$ActivityTV <- factor(dat$ActivityTV, levels = lev)
+  contrasts(dat$ActivityTV) <- contr.sum(4)
+
+  form <- DirectChol ~
+    rms::rcs(Age, age_knots_reg) * ActivityTV
+
+  X <- model.matrix(form, data = dat)
+
+  labels <- attr(terms(form), "term.labels")
+  dev_terms <- grep("ActivityTV", labels, fixed = TRUE)
+
+  penalty <- as.integer(
+    attr(X, "assign")[-1] %in% dev_terms
+  )
+
+  fit <- glmnet::cv.glmnet(
+    x = X[, -1, drop = FALSE],
+    y = dat$DirectChol,
+    alpha = 1,
+    penalty.factor = penalty,
+    foldid = fold_id,
+    type.measure = "mse"
+  )
+
+  nd <- expand.grid(
+    Age = age_reg_grid,
+    ActivityTV = lev
+  )
+
+  nd$ActivityTV <- factor(nd$ActivityTV, levels = lev)
+  contrasts(nd$ActivityTV) <- contr.sum(4)
+
+  X_new <- model.matrix(
+    delete.response(terms(form)),
+    data = nd
+  )[, -1, drop = FALSE]
+
+  nd$HDL <- as.numeric(
+    predict(fit, newx = X_new, s = "lambda.min")
+  )
+
+  nd$ImplicitGroup <- implicit_group
+  nd
+}
+
+# Repeat with each group as the implicit level
+sensitivity_predictions <- lapply(
+  levels(d$ActivityTV),
+  fit_alternative_coding
+) |>
+  bind_rows()
+
+# Compare group deviations across codings
+sensitivity_summary <- sensitivity_predictions |>
+  group_by(ImplicitGroup, Age) |>
+  mutate(Deviation = HDL - mean(HDL)) |>
+  ungroup() |>
+  group_by(ImplicitGroup, ActivityTV) |>
+  summarise(
+    RMS = sqrt(mean(Deviation^2)),
+    .groups = "drop"
+  )
+```
+
+```{r}
+#| label: tbl-coding-sensitivity
+#| tbl-cap: "Sensitivity of LASSO group deviations to the choice of implicit contrast level."
+#| echo: false
+
+sensitivity_summary |>
+  group_by(ActivityTV) |>
+  summarise(
+    `Minimum RMS` = round(min(RMS), 3),
+    `Maximum RMS` = round(max(RMS), 3),
+    .groups = "drop"
+  ) |>
+  knitr::kable(align = "lrr")
+```
+
+## Synthesis
+
+Overall, the results modestly favor a **regularized in-between model** over fully shared or fully separate age–HDL relationships. Partial sharing outperformed full sharing (CV-MSE: 0.1516 vs. 0.1542), while the full-interaction and separate models offered little additional predictive benefit (both 0.1518). Ridge and LASSO achieved slightly lower CV-MSEs (0.1513 and 0.1511, respectively), suggesting that selectively shrinking group-specific deviations may improve prediction. Active / High TV was consistently pulled closest to the shared curve, whereas Active / Low TV and Inactive / High TV retained larger deviations across contrast codings. This pattern did not consistently follow group size, suggesting that curve distinctiveness may be more relevant than sample size alone. Overall, the small predictive differences favor partial information sharing, although the findings remain sensitive to model specification and should not be interpreted causally.
+
+## Deriving the Contrast Transformation Matrix
+
+The final task is to derive the transformation from standard treatment contrasts to sum-to-zero contrasts. We follow the chapter's example using the five levels of `Race1`: Black, Hispanic, Mexican, White, and Other.
+
+Under treatment coding, Black is the reference group. The corresponding design matrix, with one representative observation per group, is:
+
+$$
+X_{\text{levels}} =
+\begin{bmatrix}
+1&0&0&0&0\\
+1&1&0&0&0\\
+1&0&1&0&0\\
+1&0&0&1&0\\
+1&0&0&0&1
+\end{bmatrix}
+$$
+
+Under sum-to-zero coding, the final group's contrast values are all $-1$:
+
+$$
+Z_{\text{levels}} =
+\begin{bmatrix}
+1&1&0&0&0\\
+1&0&1&0&0\\
+1&0&0&1&0\\
+1&0&0&0&1\\
+1&-1&-1&-1&-1
+\end{bmatrix}
+$$
+
+We seek the matrix $R$ such that $Z = XR$. Because the level-specific treatment-coding matrix is invertible, the transformation is:
+
+$$
+R = X_{\text{levels}}^{-1} Z_{\text{levels}}
+$$
+
+The first row of $R$ equals the first row of $Z_{\text{levels}}$. Each subsequent row is obtained by subtracting that first row from the corresponding row of $Z_{\text{levels}}$. Thus:
+
+$$
+R =
+\begin{bmatrix}
+1&1&0&0&0\\
+0&-1&1&0&0\\
+0&-1&0&1&0\\
+0&-1&0&0&1\\
+0&-2&-1&-1&-1
+\end{bmatrix}
+$$
+
+### Verification in R
+
+We verify that the derived transformation reproduces the sum-coded design matrix using one representative observation per category.
+
+```{r}
+#| label: verify-contrast-transformation
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# One representative of each Race1 category
+race_levels <- c(
+  "Black", "Hispanic", "Mexican", "White", "Other"
+)
+
+g <- factor(race_levels, levels = race_levels)
+
+# Reference-coded and sum-coded design matrices
+X <- model.matrix(
+  ~ g,
+  contrasts.arg = list(g = contr.treatment(5))
+)
+
+Z <- model.matrix(
+  ~ g,
+  contrasts.arg = list(g = contr.sum(5))
+)
+
+# Find the transformation matrix
+R <- solve(X, Z)
+
+# Verify that X multiplied by R equals Z
+max_difference <- max(abs(X %*% R - Z))
+
+stopifnot(max_difference < 1e-10)
+
+cat("Maximum difference:", max_difference, "\n")
+cat("Verification successful: Z = XR\n")
+```
+
+The equality $Z = XR$ confirms that the two design matrices span the same model space. Without regularization, they can produce identical fitted predictions after transforming the coefficients appropriately. With coefficient-wise regularization, however, the chosen parameterization can affect the penalty and therefore the fitted model, motivating the sensitivity analysis above.
