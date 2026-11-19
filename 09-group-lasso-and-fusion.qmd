@@ -10,7 +10,7 @@ format:
 
 In the previous chapters, I explored how regularization can improve regression models by shrinking coefficients and performing variable selection. In particular, [Chapter 7](07-regularization-elastic-net.qmd) examined how Elastic Net addresses some limitations of LASSO when predictors are highly correlated. By combining L1 and L2 penalties, Elastic Net can retain related predictors together rather than selecting only one of them.
 
-However, this grouping effect arises from correlations in the data. In some applications, predictors also have a meaningful structure that we may want to incorporate explicitly into the model. For example, multiple electrical impedance myography (EIM) measurements may belong to the same measurement modality, while several regression coefficients may represent different levels of a single categorical variable. As explored in [Chapter 8](HW8.qmd), the way categorical variables are coded can also affect coefficient-wise regularization.
+However, this grouping effect arises from correlations in the data. In some applications, predictors also have a meaningful structure that we may want to incorporate explicitly into the model. For example, multiple electrical impedance myography (EIM) measurements may belong to the same measurement modality, while several regression coefficients may represent different levels of a single categorical variable. As explored in [Chapter 8](HW9.qmd), the way categorical variables are coded can also affect coefficient-wise regularization.
 
 Group LASSO and fusion penalties address different aspects of this problem. **Group LASSO** allows predefined groups of coefficients to be selected or eliminated together, whereas **fusion** encourages certain coefficients to take the same estimated value. Rather than treating model complexity only in terms of individual coefficients, these approaches incorporate additional structure into the regularization process.
 
@@ -33,7 +33,7 @@ Group LASSO was proposed by Yuan and Lin (2006) for regression problems in which
 For linear regression, the Group LASSO objective can be written as:
 
 $$
-\hat{\boldsymbol{\beta}}
+(\hat{\beta}_0,\hat{\boldsymbol{\beta}})
 =
 \arg\min_{\beta_0,\boldsymbol{\beta}}
 \left\{
@@ -68,7 +68,51 @@ Although the penalty uses an $L_2$ norm within each group, it sums these norms i
 
 The factor $\sqrt{p_g}$ is commonly used to account for differences in group size, although appropriate scaling of the predictors is also important.
 
-### Interpretation and Connection to Previous Chapters
+### Why Can an Entire Group Become Zero?
+
+The group penalty can produce exact zeros because the Euclidean norm is not differentiable at the zero vector. To see how this works, consider a group whose predictor columns are orthonormalized, such that:
+
+$$
+\frac{1}{n}X_g^T X_g=I.
+$$
+
+Holding the coefficients of other groups fixed, define the partial residual and its association with group $g$ as:
+
+$$
+\mathbf{r}_{-g}
+=
+\mathbf{y}-\beta_0\mathbf{1}
+-\sum_{h\neq g}X_h\boldsymbol{\beta}_h,
+\qquad
+\mathbf{z}_g=\frac{1}{n}X_g^T\mathbf{r}_{-g}.
+$$
+
+Under this condition, the Group LASSO update has a closed-form solution. Here, $w_g>0$ is a group-specific penalty weight; choosing $w_g=\sqrt{p_g}$ recovers the weighting used in the formulation above:
+
+$$
+\hat{\boldsymbol{\beta}}_g
+=
+\left(
+1-\frac{\lambda w_g}{\|\mathbf{z}_g\|_2}
+\right)_+
+\mathbf{z}_g,
+$$
+
+where $(a)_+=\max(a,0)$ and the solution is defined as zero when $\mathbf{z}_g=\mathbf{0}$.
+
+Consequently,
+
+$$
+\|\mathbf{z}_g\|_2\leq\lambda w_g
+\quad\Longrightarrow\quad
+\hat{\boldsymbol{\beta}}_g=\mathbf{0}.
+$$
+
+For example, suppose two groups have $\mathbf{z}_A=(3,4)^T$ and $\mathbf{z}_B=(0.3,0.4)^T$, with $\lambda=1$ and equal weights $w_g=1$. Their norms are $5$ and $0.5$, respectively. Group A is retained with coefficients $(2.4,3.2)^T$, whereas Group B is eliminated entirely.
+
+This shows that Group LASSO evaluates the combined contribution of a group rather than deciding independently whether each coefficient should remain.
+
+### Example
 
 Consider the EIM example from [Chapter 7](07-regularization-elastic-net.qmd), where resistance measurements at different frequencies were used to predict handgrip strength.
 
@@ -92,7 +136,7 @@ If the group is retained, its coefficients can still differ in magnitude and dir
 
 This is also relevant to categorical predictors, where several coefficients may represent a single factor. Rather than selecting individual contrasts, Group LASSO can treat the factor's coefficients as one unit.
 
-However, the groups must be defined in advance, and the results can depend on how predictors are scaled or coded. This connects to the contrast-coding sensitivity explored in [Chapter 8](HW8.qmd).
+However, the groups must be defined in advance, and the results can depend on how predictors are scaled or coded. This connects to the contrast-coding sensitivity explored in [Chapter 8](HW9.qmd).
 
 ## Fusion and the Fused LASSO
 
@@ -103,7 +147,7 @@ While Group LASSO selects predefined groups of predictors, fusion takes a differ
 Tibshirani et al. (2005) introduced the **Fused LASSO**, which combines the ordinary LASSO penalty with a penalty on differences between successive coefficients:
 
 $$
-\hat{\boldsymbol{\beta}}
+(\hat{\beta}_0,\hat{\boldsymbol{\beta}})
 =
 \arg\min_{\beta_0,\boldsymbol{\beta}}
 \left\{
@@ -159,9 +203,52 @@ For example, suppose four categories initially have estimated effects of $0.10$,
 
 Unlike the original Fused LASSO, which penalizes successive differences, fusion of unordered categories may consider all pairs because there is no natural ordering.
 
-### Practical Considerations
+## Comparison and Practical Considerations
 
-Fusion is useful when we expect some effects to be similar but do not know beforehand which ones should be combined. However, its results depend on the chosen penalty strength, the pairs being compared, and their weights. For categorical predictors, differences between category effects are particularly important because they remain interpretable regardless of the chosen reference category.
+Although these methods all use regularization, they differ in what they consider a simpler model. Ordinary LASSO encourages individual coefficients to become zero, Group LASSO operates on predefined groups of coefficients, and fusion encourages selected coefficients to become equal. Elastic Net combines individual sparsity with quadratic shrinkage, but does not explicitly define groups.
 
-The important distinction is that **Group LASSO encourages entire groups of coefficients to disappear, while fusion encourages selected coefficients to become equal**. Both introduce structure into regularization, but they impose different assumptions on the fitted model.
+The main penalties can be summarized as follows:
 
+| Method | Penalty | Main effect |
+|---|---|---|
+| Ridge | $\lambda\sum_j\beta_j^2$ | Shrinks coefficients |
+| LASSO | $\lambda\sum_j|\beta_j|$ | Selects individual coefficients |
+| Elastic Net | $\lambda_1\sum_j|\beta_j|+\lambda_2\sum_j\beta_j^2$ | Combines sparsity and quadratic shrinkage |
+| Group LASSO | $\lambda\sum_g\sqrt{p_g}\|\boldsymbol{\beta}_g\|_2$ | Selects entire groups |
+| Fusion | $\lambda\sum_{(j,k)\in E}w_{jk}|\beta_j-\beta_k|$ | Encourages equal coefficients |
+
+A simple numerical example illustrates the difference. Suppose two coefficients are both equal to $0.4$. Ignoring tuning parameters and group weights, the penalties are:
+
+$$
+\begin{aligned}
+P_{\text{LASSO}} &= |0.4|+|0.4|=0.8,\\
+P_{\text{Group LASSO}} &= \sqrt{0.4^2+0.4^2}\approx0.566,\\
+P_{\text{Fusion}} &= |0.4-0.4|=0.
+\end{aligned}
+$$
+
+These values are not directly comparable measures of model quality, but they show what each penalty targets. LASSO and Group LASSO still penalize the magnitude of the coefficients, while fusion imposes no penalty on their difference because they are already equal.
+
+### Choosing the Appropriate Penalty
+
+The choice of method depends on what we want the model to preserve. Group LASSO is useful when predictors belong to predefined groups that should be selected together, while fusion is more appropriate when we expect some coefficients to share the same effect.
+
+In practice, these choices require some care. Group definitions, predictor scaling, and coefficient parameterization can influence Group LASSO results. For fusion, we must decide which differences to penalize, particularly when working with ordered versus unordered categories. Penalty strengths can be selected using cross-validation, although the best predictive model does not necessarily identify the true underlying structure.
+
+## Conclusion
+
+Group LASSO and fusion extend regularization beyond individual coefficient shrinkage by incorporating structure into the model. Group LASSO allows related coefficients to be selected or removed together, while fusion encourages coefficients with similar effects to become equal. Although both can produce simpler models, they achieve this through different penalties and serve different purposes.
+
+An important takeaway is that the choice of penalty should reflect the scientific question and the structure of the predictors. These methods can improve interpretability, but their results also depend on how groups, coefficient differences and penalty strengths are defined.
+
+## References
+
+Gertheiss, J., & Tutz, G. (2010). Sparse modeling of categorial explanatory variables. *The Annals of Applied Statistics, 4*(4), 2150–2180. <https://doi.org/10.1214/10-AOAS355>
+
+Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. *Journal of the Royal Statistical Society: Series B (Methodological), 58*(1), 267–288. <https://doi.org/10.1111/j.2517-6161.1996.tb02080.x>
+
+Tibshirani, R., Saunders, M., Rosset, S., Zhu, J., & Knight, K. (2005). Sparsity and smoothness via the fused lasso. *Journal of the Royal Statistical Society: Series B (Statistical Methodology), 67*(1), 91–108. <https://doi.org/10.1111/j.1467-9868.2005.00490.x>
+
+Yuan, M., & Lin, Y. (2006). Model selection and estimation in regression with grouped variables. *Journal of the Royal Statistical Society: Series B (Statistical Methodology), 68*(1), 49–67. <https://doi.org/10.1111/j.1467-9868.2005.00532.x>
+
+Zou, H., & Hastie, T. (2005). Regularization and variable selection via the elastic net. *Journal of the Royal Statistical Society: Series B (Statistical Methodology), 67*(2), 301–320. <https://doi.org/10.1111/j.1467-9868.2005.00503.x>
