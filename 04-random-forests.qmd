@@ -1088,10 +1088,10 @@ Several features of Random Forest should be considered when fitting and interpre
 
 ## References
 
-Breiman, L. (1996). Bagging predictors. *Machine Learning, 24*, 123–140. https://doi.org/10.1007/BF00058655
+Breiman, L. (1996). Bagging predictors. *Machine Learning, 24*, 123–140. <https://doi.org/10.1007/BF00058655>
 
-Breiman, L. (2001). Random forests. *Machine Learning, 45*, 5–32. https://doi.org/10.1023/A:1010933404324
+Breiman, L. (2001). Random forests. *Machine Learning, 45*, 5–32. <https://doi.org/10.1023/A:1010933404324>
 
 Breiman, L., Friedman, J. H., Olshen, R. A., & Stone, C. J. (1984). *Classification and regression trees*. Wadsworth & Brooks/Cole.
 
-Ho, T. K. (1998). The random subspace method for constructing decision forests. *IEEE Transactions on Pattern Analysis and Machine Intelligence, 20*(8), 832–844. https://doi.org/10.1109/34.709601
+Ho, T. K. (1998). The random subspace method for constructing decision forests. *IEEE Transactions on Pattern Analysis and Machine Intelligence, 20*(8), 832–844. <https://doi.org/10.1109/34.709601>
