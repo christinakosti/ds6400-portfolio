@@ -1,5 +1,5 @@
 ---
-title: "HW8: Interactions and Information Sharing"
+title: "HW9: Interactions and Information Sharing"
 format:
   html:
     code-fold: true

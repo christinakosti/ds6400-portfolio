@@ -1,0 +1,167 @@
+---
+title: "Group LASSO and Fusion: Structured Regularization"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## Introduction
+
+In the previous chapters, I explored how regularization can improve regression models by shrinking coefficients and performing variable selection. In particular, [Chapter 7](07-regularization-elastic-net.qmd) examined how Elastic Net addresses some limitations of LASSO when predictors are highly correlated. By combining L1 and L2 penalties, Elastic Net can retain related predictors together rather than selecting only one of them.
+
+However, this grouping effect arises from correlations in the data. In some applications, predictors also have a meaningful structure that we may want to incorporate explicitly into the model. For example, multiple electrical impedance myography (EIM) measurements may belong to the same measurement modality, while several regression coefficients may represent different levels of a single categorical variable. As explored in [Chapter 8](HW8.qmd), the way categorical variables are coded can also affect coefficient-wise regularization.
+
+Group LASSO and fusion penalties address different aspects of this problem. **Group LASSO** allows predefined groups of coefficients to be selected or eliminated together, whereas **fusion** encourages certain coefficients to take the same estimated value. Rather than treating model complexity only in terms of individual coefficients, these approaches incorporate additional structure into the regularization process.
+
+This chapter reviews the development of these methods, explains their mathematical formulations, and discusses how they differ from ordinary LASSO and Elastic Net, including their practical advantages and limitations.
+
+## Development of the Methods
+
+The starting point is LASSO, introduced by Tibshirani (1996), which uses an L1 penalty to shrink individual coefficients and potentially set them to zero. Although useful for variable selection, this approach does not explicitly account for relationships or predefined structures among predictors.
+
+Several extensions were developed to address this limitation. Tibshirani et al. (2005) proposed the **Fused LASSO**, combining coefficient shrinkage with a penalty on differences between neighboring coefficients. Around the same time, Zou and Hastie (2005) introduced **Elastic Net**, which combines L1 and L2 penalties to improve variable selection when predictors are highly correlated, as discussed in [Chapter 7](07-regularization-elastic-net.qmd).
+
+Yuan and Lin (2006) subsequently introduced **Group LASSO**, allowing predefined groups of coefficients to be selected or removed together. Later, Gertheiss and Tutz (2010) extended fusion-based regularization to categorical predictors, allowing categories with similar estimated effects to be combined. These developments introduced different ways of incorporating structure into regression models, beyond penalizing individual coefficients.
+
+## Group LASSO
+
+Group LASSO was proposed by Yuan and Lin (2006) for regression problems in which predictors can be divided into meaningful groups. Unlike ordinary LASSO, which penalizes each coefficient separately, Group LASSO applies a penalty to the coefficients belonging to the same group.
+
+### Mathematical Formulation
+
+For linear regression, the Group LASSO objective can be written as:
+
+$$
+\hat{\boldsymbol{\beta}}
+=
+\arg\min_{\beta_0,\boldsymbol{\beta}}
+\left\{
+\frac{1}{2n}
+\sum_{i=1}^{n}
+\left(
+y_i-\beta_0-\sum_{g=1}^{G}
+\mathbf{x}_{ig}^{T}\boldsymbol{\beta}_g
+\right)^2
++
+\lambda\sum_{g=1}^{G}
+\sqrt{p_g}\|\boldsymbol{\beta}_g\|_2
+\right\}.
+$$
+
+The first term measures the model's prediction error, as in ordinary least squares. The second term is the **Group LASSO penalty**, where:
+
+- $G$ is the number of predefined groups.
+- $\boldsymbol{\beta}_g$ contains the coefficients belonging to group $g$.
+- $p_g$ is the number of coefficients in that group.
+- $\lambda$ controls the strength of regularization.
+
+The key component is the Euclidean ($L_2$) norm of each group's coefficient vector:
+
+$$
+\|\boldsymbol{\beta}_g\|_2
+=
+\sqrt{\beta_{g1}^2+\beta_{g2}^2+\cdots+\beta_{gp_g}^2}.
+$$
+
+Although the penalty uses an $L_2$ norm within each group, it sums these norms in a way that resembles an $L_1$ penalty across groups. This combination is what makes **group-level sparsity** possible: a sufficiently strong penalty can set an entire coefficient vector to zero, removing that group from the model.
+
+The factor $\sqrt{p_g}$ is commonly used to account for differences in group size, although appropriate scaling of the predictors is also important.
+
+### Interpretation and Connection to Previous Chapters
+
+Consider the EIM example from [Chapter 7](07-regularization-elastic-net.qmd), where resistance measurements at different frequencies were used to predict handgrip strength.
+
+If four resistance measurements were defined as one group, their coefficients could be represented as:
+
+$$
+\boldsymbol{\beta}_{EIM}
+=
+(\beta_{22},\beta_{36},\beta_{50},\beta_{56})^T.
+$$
+
+Ordinary LASSO could retain some frequencies while setting others to zero. Group LASSO could instead eliminate the entire resistance group:
+
+$$
+\hat{\boldsymbol{\beta}}_{EIM}
+=
+(0,0,0,0)^T.
+$$
+
+If the group is retained, its coefficients can still differ in magnitude and direction. **Group LASSO selects groups together; it does not require their coefficients to be equal.**
+
+This is also relevant to categorical predictors, where several coefficients may represent a single factor. Rather than selecting individual contrasts, Group LASSO can treat the factor's coefficients as one unit.
+
+However, the groups must be defined in advance, and the results can depend on how predictors are scaled or coded. This connects to the contrast-coding sensitivity explored in [Chapter 8](HW8.qmd).
+
+## Fusion and the Fused LASSO
+
+While Group LASSO selects predefined groups of predictors, fusion takes a different approach: it encourages coefficients to have the same estimated value. This is useful when several predictors or categories may have similar effects, making it unnecessary to estimate every coefficient independently.
+
+### Mathematical Formulation
+
+Tibshirani et al. (2005) introduced the **Fused LASSO**, which combines the ordinary LASSO penalty with a penalty on differences between successive coefficients:
+
+$$
+\hat{\boldsymbol{\beta}}
+=
+\arg\min_{\beta_0,\boldsymbol{\beta}}
+\left\{
+\frac{1}{2n}
+\sum_{i=1}^{n}
+(y_i-\beta_0-\mathbf{x}_i^T\boldsymbol{\beta})^2
++
+\lambda_1\sum_{j=1}^{p}|\beta_j|
++
+\lambda_2\sum_{j=2}^{p}|\beta_j-\beta_{j-1}|
+\right\}.
+$$
+
+The objective contains three components:
+
+- The squared-error term measures how well the model fits the observations.
+- The **LASSO penalty**, controlled by $\lambda_1$, encourages individual coefficients to become zero.
+- The **fusion penalty**, controlled by $\lambda_2$, encourages differences between neighboring coefficients to become zero.
+
+The distinction lies in what is being penalized:
+
+$$
+|\beta_j|=0
+\quad\Longrightarrow\quad
+\beta_j=0
+$$
+
+whereas
+
+$$
+|\beta_j-\beta_{j-1}|=0
+\quad\Longrightarrow\quad
+\beta_j=\beta_{j-1}.
+$$
+
+Thus, the Fused LASSO can produce both sparse coefficients and sequences of equal coefficients. For ordered predictors, such as measurements collected across consecutive time points, this can result in piecewise-constant coefficient patterns.
+
+### Fusion of Categorical Effects
+
+Fusion can also be applied to categorical predictors. Gertheiss and Tutz (2010) examined penalties that allow categories with similar effects to be combined.
+
+For an unordered categorical predictor with $K$ levels, one possible fusion penalty is:
+
+$$
+P_{\mathrm{fusion}}(\boldsymbol{\theta})
+=
+\lambda\sum_{j<k}w_{jk}|\theta_j-\theta_k|,
+$$
+
+where $\theta_j$ and $\theta_k$ represent category effects and $w_{jk}$ are nonnegative weights controlling the penalty applied to each pair.
+
+For example, suppose four categories initially have estimated effects of $0.10$, $0.04$, $0.03$, and $-0.08$. A fusion penalty may encourage the second and third categories to have exactly the same estimated effect, effectively reducing the number of distinct category effects.
+
+Unlike the original Fused LASSO, which penalizes successive differences, fusion of unordered categories may consider all pairs because there is no natural ordering.
+
+### Practical Considerations
+
+Fusion is useful when we expect some effects to be similar but do not know beforehand which ones should be combined. However, its results depend on the chosen penalty strength, the pairs being compared, and their weights. For categorical predictors, differences between category effects are particularly important because they remain interpretable regardless of the chosen reference category.
+
+The important distinction is that **Group LASSO encourages entire groups of coefficients to disappear, while fusion encourages selected coefficients to become equal**. Both introduce structure into regularization, but they impose different assumptions on the fitted model.
+
